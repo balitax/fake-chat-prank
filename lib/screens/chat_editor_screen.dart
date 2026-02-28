@@ -21,7 +21,6 @@ class ChatEditorScreen extends StatefulWidget {
 
 class _ChatEditorScreenState extends State<ChatEditorScreen> {
   final StorageService _storageService = StorageService();
-  final ScreenshotService _screenshotService = ScreenshotService();
   final ImagePicker _imagePicker = ImagePicker();
   
   late ChatProjectModel _project;
@@ -30,7 +29,6 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   bool _isTyping = false;
   bool _autoScroll = true;
   bool _showWatermark = true;
-  int _messageDelay = 2000;
   
   final ScrollController _scrollController = ScrollController();
   MessageSender _defaultSender = MessageSender.me;
@@ -52,7 +50,6 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       _isDarkMode = isDark;
       _autoScroll = settings['autoScroll'] ?? true;
       _showWatermark = settings['watermarkEnabled'] ?? true;
-      _messageDelay = settings['defaultMessageDelay'] ?? 2000;
     });
   }
 
@@ -411,11 +408,11 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 GestureDetector(
                   onTap: () async {
                     await _pickProfileImage();
-                    if (mounted) Navigator.pop(context);
+                    if (mounted && context.mounted) Navigator.pop(context);
                   },
                   child: CircleAvatar(
                     radius: 40,
-                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     backgroundImage: _project.profile.profileImagePath != null
                         ? FileImage(File(_project.profile.profileImagePath!))
                         : null,

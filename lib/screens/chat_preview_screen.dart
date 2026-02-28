@@ -1,7 +1,5 @@
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:screenshot/screenshot.dart';
 import '../models/models.dart';
 import '../services/services.dart';
@@ -217,48 +215,53 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
 
     try {
       // Capture the widget
-      final Uint8List? imageBytes = await _screenshotController.captureFromWidget(
-        Material(
-          color: widget.isDarkMode ? Colors.black : Colors.white,
-          child: RepaintBoundary(
-            key: _chatAreaKey,
-            child: Column(
-              children: [
-                ChatHeader(
-                  profile: widget.project.profile,
-                  isDarkMode: widget.isDarkMode,
-                ),
-                Expanded(
-                  child: Container(
-                    color: AppTheme.getChatBackground(widget.isDarkMode),
-                    child: widget.project.messages.isEmpty
-                        ? _buildEmptyState()
-                        : _buildMessagesList(),
+      Uint8List? imageBytes;
+      try {
+        imageBytes = await _screenshotController.captureFromWidget(
+          Material(
+            color: widget.isDarkMode ? Colors.black : Colors.white,
+            child: RepaintBoundary(
+              key: _chatAreaKey,
+              child: Column(
+                children: [
+                  ChatHeader(
+                    profile: widget.project.profile,
+                    isDarkMode: widget.isDarkMode,
                   ),
-                ),
-                if (widget.showWatermark)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: AppTheme.getChatBackground(widget.isDarkMode),
-                    child: Center(
-                      child: Text(
-                        'Fake Chat Simulator',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.isDarkMode 
-                              ? Colors.white24 
-                              : Colors.black26,
+                  Expanded(
+                    child: Container(
+                      color: AppTheme.getChatBackground(widget.isDarkMode),
+                      child: widget.project.messages.isEmpty
+                          ? _buildEmptyState()
+                          : _buildMessagesList(),
+                    ),
+                  ),
+                  if (widget.showWatermark)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      color: AppTheme.getChatBackground(widget.isDarkMode),
+                      child: Center(
+                        child: Text(
+                          'Fake Chat Simulator',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.isDarkMode 
+                                ? Colors.white24 
+                                : Colors.black26,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        pixelRatio: 3.0,
-        delay: const Duration(milliseconds: 100),
-      );
+          pixelRatio: 3.0,
+          delay: const Duration(milliseconds: 100),
+        );
+      } catch (e) {
+        imageBytes = null;
+      }
 
       if (imageBytes == null) {
         throw Exception('Failed to capture screenshot');

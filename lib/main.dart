@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(
               Icons.chat_bubble_outline,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
             const SizedBox(width: 8),
             const Text('Fake Chat Simulator'),
@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               child: Text(
                 _getInitials(project.name),
                 style: TextStyle(

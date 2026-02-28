@@ -14,7 +14,7 @@ class ScreenshotService {
 
   Future<Uint8List?> captureWidget(Widget widget, {double pixelRatio = 3.0}) async {
     try {
-      final Uint8List? image = await _screenshotController.captureFromWidget(
+      final Uint8List image = await _screenshotController.captureFromWidget(
         widget,
         pixelRatio: pixelRatio,
         delay: const Duration(milliseconds: 100),
