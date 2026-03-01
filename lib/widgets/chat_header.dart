@@ -6,12 +6,16 @@ class ChatHeader extends StatelessWidget {
   final ChatProfileModel profile;
   final bool isDarkMode;
   final VoidCallback onEditPressed;
+  final bool isGroupChat;
+  final List<GroupMemberModel> groupMembers;
 
   const ChatHeader({
     super.key,
     required this.profile,
     required this.isDarkMode,
     required this.onEditPressed,
+    this.isGroupChat = false,
+    this.groupMembers = const [],
   });
 
   @override
@@ -30,7 +34,6 @@ class ChatHeader extends StatelessWidget {
         bottom: false,
         child: Row(
           children: [
-            // Back + Avatar together (WhatsApp style)
             InkWell(
               onTap: () => Navigator.pop(context),
               borderRadius: BorderRadius.circular(24),
@@ -43,30 +46,42 @@ class ChatHeader extends StatelessWidget {
                     const SizedBox(width: 4),
                     Hero(
                       tag: 'profile_${profile.name}',
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: const Color(0xFF6B7B8D),
-                        backgroundImage: profile.profileImagePath != null
-                            ? FileImage(File(profile.profileImagePath!))
-                            : null,
-                        child: profile.profileImagePath == null
-                            ? Text(
-                                _getInitials(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
-                              )
-                            : null,
-                      ),
+                      child: isGroupChat
+                          ? CircleAvatar(
+                              radius: 18,
+                              backgroundColor: const Color(0xFF00A884),
+                              child: const Icon(
+                                Icons.group,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            )
+                          : CircleAvatar(
+                              radius: 18,
+                              backgroundColor: const Color(0xFF6B7B8D),
+                              backgroundImage:
+                                  profile.profileImagePath != null
+                                      ? FileImage(
+                                          File(profile.profileImagePath!),
+                                        )
+                                      : null,
+                              child: profile.profileImagePath == null
+                                  ? Text(
+                                      _getInitials(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
+                                      ),
+                                    )
+                                  : null,
+                            ),
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            // Name + Status
             Expanded(
               child: InkWell(
                 onTap: onEditPressed,
@@ -77,7 +92,9 @@ class ChatHeader extends StatelessWidget {
                     Text(
                       profile.name,
                       style: TextStyle(
-                        color: isDark ? const Color(0xFFE9EDEF) : Colors.white,
+                        color: isDark
+                            ? const Color(0xFFE9EDEF)
+                            : Colors.white,
                         fontWeight: FontWeight.w500,
                         fontSize: 18,
                       ),
@@ -85,12 +102,13 @@ class ChatHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 1),
-                    _buildStatusText(),
+                    isGroupChat
+                        ? _buildGroupSubtitle()
+                        : _buildStatusText(),
                   ],
                 ),
               ),
             ),
-            // Action icons
             IconButton(
               icon: Icon(Icons.videocam_rounded, color: iconColor, size: 22),
               onPressed: () {},
@@ -116,6 +134,21 @@ class ChatHeader extends StatelessWidget {
   }
 
   bool get isDark => isDarkMode;
+
+  Widget _buildGroupSubtitle() {
+    final names = ['You', ...groupMembers.map((m) => m.name)];
+    return Text(
+      names.join(', '),
+      style: TextStyle(
+        color: isDark
+            ? const Color(0xFF8696A0)
+            : Colors.white.withValues(alpha: 0.8),
+        fontSize: 13,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 
   Widget _buildStatusText() {
     String statusText;

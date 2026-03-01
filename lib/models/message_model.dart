@@ -11,6 +11,7 @@ class MessageModel {
   final DateTime timestamp;
   final MessageStatus status;
   final bool isDeleted;
+  final String? groupMemberId;
 
   MessageModel({
     required this.id,
@@ -19,6 +20,7 @@ class MessageModel {
     required this.timestamp,
     this.status = MessageStatus.sent,
     this.isDeleted = false,
+    this.groupMemberId,
   });
 
   MessageModel copyWith({
@@ -28,6 +30,7 @@ class MessageModel {
     DateTime? timestamp,
     MessageStatus? status,
     bool? isDeleted,
+    String? groupMemberId,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -36,6 +39,7 @@ class MessageModel {
       timestamp: timestamp ?? this.timestamp,
       status: status ?? this.status,
       isDeleted: isDeleted ?? this.isDeleted,
+      groupMemberId: groupMemberId ?? this.groupMemberId,
     );
   }
 
@@ -47,6 +51,7 @@ class MessageModel {
       'timestamp': timestamp.toIso8601String(),
       'status': status.index,
       'isDeleted': isDeleted,
+      'groupMemberId': groupMemberId,
     };
   }
 
@@ -58,13 +63,16 @@ class MessageModel {
       timestamp: DateTime.parse(json['timestamp'] as String),
       status: MessageStatus.values[json['status'] as int],
       isDeleted: json['isDeleted'] as bool? ?? false,
+      groupMemberId: json['groupMemberId'] as String?,
     );
   }
 
   String toJsonString() => jsonEncode(toJson());
 
   factory MessageModel.fromJsonString(String jsonString) {
-    return MessageModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+    return MessageModel.fromJson(
+      jsonDecode(jsonString) as Map<String, dynamic>,
+    );
   }
 
   @override

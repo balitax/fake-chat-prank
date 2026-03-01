@@ -10,6 +10,10 @@ class ChatBubble extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final bool showTail;
+  final Color? myBubbleColor;
+  final Color? otherBubbleColor;
+  final String? senderName;
+  final Color? senderColor;
 
   const ChatBubble({
     super.key,
@@ -19,14 +23,18 @@ class ChatBubble extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.showTail = true,
+    this.myBubbleColor,
+    this.otherBubbleColor,
+    this.senderName,
+    this.senderColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool isMe = message.sender == MessageSender.me;
     final Color bubbleColor = isMe
-        ? AppTheme.getMyMessageBubble(isDarkMode)
-        : AppTheme.getOtherMessageBubble(isDarkMode);
+        ? (myBubbleColor ?? AppTheme.getMyMessageBubble(isDarkMode))
+        : (otherBubbleColor ?? AppTheme.getOtherMessageBubble(isDarkMode));
 
     return GestureDetector(
       onTap: onTap,
@@ -46,10 +54,7 @@ class ChatBubble extends StatelessWidget {
             Flexible(
               child: CustomPaint(
                 painter: showTail
-                    ? _BubbleTailPainter(
-                        color: bubbleColor,
-                        isMe: isMe,
-                      )
+                    ? _BubbleTailPainter(color: bubbleColor, isMe: isMe)
                     : null,
                 child: Container(
                   margin: EdgeInsets.only(
@@ -65,65 +70,82 @@ class ChatBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: bubbleColor,
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(isMe ? 8 : (showTail ? 0 : 8)),
-                      topRight: Radius.circular(isMe ? (showTail ? 0 : 8) : 8),
+                      topLeft:
+                          Radius.circular(isMe ? 8 : (showTail ? 0 : 8)),
+                      topRight:
+                          Radius.circular(isMe ? (showTail ? 0 : 8) : 8),
                       bottomLeft: const Radius.circular(8),
                       bottomRight: const Radius.circular(8),
                     ),
                   ),
-                  child: Stack(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: message.text,
-                                style: TextStyle(
-                                  fontSize: 15.5,
-                                  color: isDarkMode
-                                      ? const Color(0xFFE9EDEF)
-                                      : const Color(0xFF111B21),
-                                  height: 1.3,
-                                ),
-                              ),
-                              // Invisible spacer for timestamp area
-                              TextSpan(
-                                text: isMe
-                                    ? '         ${_formatTime(message.timestamp)}  '
-                                    : '      ${_formatTime(message.timestamp)} ',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.transparent,
-                                ),
-                              ),
-                            ],
+                      if (senderName != null && !isMe && showTail)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text(
+                            senderName!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: senderColor ?? const Color(0xFF00A884),
+                            ),
                           ),
                         ),
-                      ),
-                      // Timestamp and status
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _formatTime(message.timestamp),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isDarkMode
-                                    ? const Color(0xFF8696A0)
-                                    : const Color(0xFF667781),
+                      Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: message.text,
+                                    style: TextStyle(
+                                      fontSize: 15.5,
+                                      color: isDarkMode
+                                          ? const Color(0xFFE9EDEF)
+                                          : const Color(0xFF111B21),
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: isMe
+                                        ? '         ${_formatTime(message.timestamp)}  '
+                                        : '      ${_formatTime(message.timestamp)} ',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.transparent,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            if (isMe) ...[
-                              const SizedBox(width: 3),
-                              _buildStatusIcon(),
-                            ],
-                          ],
-                        ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _formatTime(message.timestamp),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDarkMode
+                                        ? const Color(0xFF8696A0)
+                                        : const Color(0xFF667781),
+                                  ),
+                                ),
+                                if (isMe) ...[
+                                  const SizedBox(width: 3),
+                                  _buildStatusIcon(),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -138,7 +160,8 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildStatusIcon() {
     IconData icon = Icons.done;
-    Color color = isDarkMode ? const Color(0xFF8696A0) : const Color(0xFF667781);
+    Color color =
+        isDarkMode ? const Color(0xFF8696A0) : const Color(0xFF667781);
 
     switch (message.status) {
       case MessageStatus.sending:
@@ -179,13 +202,11 @@ class _BubbleTailPainter extends CustomPainter {
     final path = Path();
 
     if (isMe) {
-      // Right tail
       path.moveTo(size.width, 0);
       path.lineTo(size.width + 8, 0);
       path.quadraticBezierTo(size.width + 8, 10, size.width, 10);
       path.close();
     } else {
-      // Left tail
       path.moveTo(0, 0);
       path.lineTo(-8, 0);
       path.quadraticBezierTo(-8, 10, 0, 10);

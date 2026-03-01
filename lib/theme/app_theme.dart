@@ -278,4 +278,109 @@ class AppTheme {
   static Color getMyMessageBubble(bool isDark) => isDark ? darkMyBubble : lightMyBubble;
   static Color getOtherMessageBubble(bool isDark) => isDark ? darkOtherBubble : lightOtherBubble;
   static Color getInputBackground(bool isDark) => isDark ? darkInputBg : lightInputBg;
+
+  // ─── Chat Themes ───
+  static final List<ChatTheme> chatThemes = [
+    const ChatTheme(
+      id: 'default',
+      name: 'Default',
+      lightMyBubble: Color(0xFFD9FDD3),
+      lightOtherBubble: Color(0xFFFFFFFF),
+      lightChatBg: Color(0xFFEFE7DE),
+      darkMyBubble: Color(0xFF005C4B),
+      darkOtherBubble: Color(0xFF202C33),
+      darkChatBg: Color(0xFF0B141A),
+      previewColor: Color(0xFF25D366),
+    ),
+    const ChatTheme(
+      id: 'ocean',
+      name: 'Ocean Blue',
+      lightMyBubble: Color(0xFFD0E8FF),
+      lightOtherBubble: Color(0xFFFFFFFF),
+      lightChatBg: Color(0xFFE3EFF9),
+      darkMyBubble: Color(0xFF1A3A5C),
+      darkOtherBubble: Color(0xFF1E2D3D),
+      darkChatBg: Color(0xFF0A1929),
+      previewColor: Color(0xFF2196F3),
+    ),
+    const ChatTheme(
+      id: 'rose',
+      name: 'Rose Pink',
+      lightMyBubble: Color(0xFFFFD6E0),
+      lightOtherBubble: Color(0xFFFFFFFF),
+      lightChatBg: Color(0xFFFCE4EC),
+      darkMyBubble: Color(0xFF5C1A2A),
+      darkOtherBubble: Color(0xFF3D1E2A),
+      darkChatBg: Color(0xFF1A0A10),
+      previewColor: Color(0xFFE91E63),
+    ),
+    const ChatTheme(
+      id: 'midnight',
+      name: 'Midnight Purple',
+      lightMyBubble: Color(0xFFE1D5F0),
+      lightOtherBubble: Color(0xFFFFFFFF),
+      lightChatBg: Color(0xFFEDE7F6),
+      darkMyBubble: Color(0xFF3A1A5C),
+      darkOtherBubble: Color(0xFF2D1E3D),
+      darkChatBg: Color(0xFF100A1A),
+      previewColor: Color(0xFF9C27B0),
+    ),
+    const ChatTheme(
+      id: 'sunset',
+      name: 'Sunset Orange',
+      lightMyBubble: Color(0xFFFFE0CC),
+      lightOtherBubble: Color(0xFFFFFFFF),
+      lightChatBg: Color(0xFFFFF3E0),
+      darkMyBubble: Color(0xFF5C3A1A),
+      darkOtherBubble: Color(0xFF3D2D1E),
+      darkChatBg: Color(0xFF1A100A),
+      previewColor: Color(0xFFFF9800),
+    ),
+    const ChatTheme(
+      id: 'forest',
+      name: 'Forest Green',
+      lightMyBubble: Color(0xFFC8E6C9),
+      lightOtherBubble: Color(0xFFFFFFFF),
+      lightChatBg: Color(0xFFE8F5E9),
+      darkMyBubble: Color(0xFF1B5E20),
+      darkOtherBubble: Color(0xFF1E3D20),
+      darkChatBg: Color(0xFF0A1A0C),
+      previewColor: Color(0xFF4CAF50),
+    ),
+  ];
+
+  static ChatTheme getThemeById(String id) {
+    return chatThemes.firstWhere(
+      (t) => t.id == id,
+      orElse: () => chatThemes.first,
+    );
+  }
+}
+
+class ChatTheme {
+  final String id;
+  final String name;
+  final Color lightMyBubble;
+  final Color lightOtherBubble;
+  final Color lightChatBg;
+  final Color darkMyBubble;
+  final Color darkOtherBubble;
+  final Color darkChatBg;
+  final Color previewColor;
+
+  const ChatTheme({
+    required this.id,
+    required this.name,
+    required this.lightMyBubble,
+    required this.lightOtherBubble,
+    required this.lightChatBg,
+    required this.darkMyBubble,
+    required this.darkOtherBubble,
+    required this.darkChatBg,
+    required this.previewColor,
+  });
+
+  Color myBubble(bool isDark) => isDark ? darkMyBubble : lightMyBubble;
+  Color otherBubble(bool isDark) => isDark ? darkOtherBubble : lightOtherBubble;
+  Color chatBg(bool isDark) => isDark ? darkChatBg : lightChatBg;
 }
