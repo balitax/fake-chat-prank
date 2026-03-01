@@ -1,4 +1,4 @@
-package com.fakechat.fake_chat_simulator
+package gus.play.fakechat
 
 import io.flutter.embedding.android.FlutterActivity
 

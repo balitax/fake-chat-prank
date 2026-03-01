@@ -3,27 +3,81 @@ import 'package:flutter/services.dart';
 import 'services/services.dart';
 import 'screens/screens.dart';
 import 'theme/app_theme.dart';
+import 'widgets/widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Set preferred orientations
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize services
   final storageService = StorageService();
   await storageService.init();
 
-  runApp(FakeChatApp(storageService: storageService));
+  final adService = AdService();
+  await adService.initialize();
+
+  final isDark = await storageService.isDarkMode();
+
+  runApp(FakeChatApp(storageService: storageService, initialDarkMode: isDark));
 }
 
-class FakeChatApp extends StatelessWidget {
+class FakeChatApp extends StatefulWidget {
   final StorageService storageService;
+  final bool initialDarkMode;
 
-  const FakeChatApp({super.key, required this.storageService});
+  const FakeChatApp({
+    super.key,
+    required this.storageService,
+    required this.initialDarkMode,
+  });
+
+  @override
+  State<FakeChatApp> createState() => FakeChatAppState();
+}
+
+class FakeChatAppState extends State<FakeChatApp> with WidgetsBindingObserver {
+  late bool _isDarkMode;
+  final AdService _adService = AdService();
+  bool _hasShownAppOpenAd = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isDarkMode = widget.initialDarkMode;
+    WidgetsBinding.instance.addObserver(this);
+
+    // Show app open ad after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasShownAppOpenAd) {
+        _hasShownAppOpenAd = true;
+        Future.delayed(const Duration(seconds: 1), () {
+          _adService.showAppOpenAd();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _adService.showAppOpenAd();
+    }
+  }
+
+  void setDarkMode(bool value) {
+    setState(() {
+      _isDarkMode = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,16 +86,24 @@ class FakeChatApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      home: HomeScreen(storageService: storageService),
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: HomeScreen(
+        storageService: widget.storageService,
+        onThemeChanged: setDarkMode,
+      ),
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
+  final ValueChanged<bool> onThemeChanged;
 
-  const HomeScreen({super.key, required this.storageService});
+  const HomeScreen({
+    super.key,
+    required this.storageService,
+    required this.onThemeChanged,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -61,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadData() async {
     final isDark = await widget.storageService.isDarkMode();
     final projects = await widget.storageService.getAllProjects();
-    
+
     setState(() {
       _isDarkMode = isDark;
       _projects = projects;
@@ -69,78 +131,138 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _toggleTheme() async {
+    final newValue = !_isDarkMode;
+    await widget.storageService.setThemeMode(newValue);
+    setState(() {
+      _isDarkMode = newValue;
+    });
+    widget.onThemeChanged(newValue);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-            const SizedBox(width: 8),
-            const Text('Fake Chat Simulator'),
-          ],
-        ),
+        title: const Text('WhatsApp'),
         actions: [
           IconButton(
-            icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            icon: Icon(
+              _isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              color: isDark ? const Color(0xFF8696A0) : Colors.white,
+            ),
             onPressed: _toggleTheme,
             tooltip: 'Toggle Theme',
           ),
+          IconButton(
+            icon: Icon(
+              Icons.camera_alt_outlined,
+              color: isDark ? const Color(0xFF8696A0) : Colors.white,
+            ),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.search,
+              color: isDark ? const Color(0xFF8696A0) : Colors.white,
+            ),
+            onPressed: () {},
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: isDark ? const Color(0xFF8696A0) : Colors.white,
+            ),
+            onSelected: (value) {
+              if (value == 'settings') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsScreen(
+                      isDarkMode: _isDarkMode,
+                      onThemeChanged: (isDark) {
+                        setState(() => _isDarkMode = isDark);
+                        widget.onThemeChanged(isDark);
+                      },
+                    ),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'new_group', child: Text('New group')),
+              const PopupMenuItem(value: 'new_broadcast', child: Text('New broadcast')),
+              const PopupMenuItem(value: 'linked', child: Text('Linked devices')),
+              const PopupMenuItem(value: 'starred', child: Text('Starred messages')),
+              const PopupMenuItem(value: 'settings', child: Text('Settings')),
+            ],
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _projects.isEmpty
-              ? _buildEmptyState()
-              : _buildProjectsList(),
-      floatingActionButton: FloatingActionButton.extended(
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _projects.isEmpty
+                    ? _buildEmptyState()
+                    : _buildProjectsList(),
+          ),
+          // Banner Ad at bottom
+          const BannerAdWidget(),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
         onPressed: _createNewChat,
-        icon: const Icon(Icons.add),
-        label: const Text('New Chat'),
+        child: const Icon(Icons.chat, size: 24),
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 80,
-              color: _isDarkMode ? Colors.white24 : Colors.black26,
+            Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chat_outlined,
+                size: 64,
+                color: theme.colorScheme.primary.withValues(alpha: 0.4),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
-              'No Chats Yet',
-              style: TextStyle(
-                fontSize: 24,
+              'No chats yet',
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: _isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              'Create your first fake chat conversation\nto get started!',
+              'Tap the button below to create your first fake conversation',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: _isDarkMode ? Colors.white54 : Colors.black45,
-              ),
+              style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _createNewChat,
-              icon: const Icon(Icons.add),
-              label: const Text('Create Chat'),
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text('New Chat'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -150,74 +272,143 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProjectsList() {
+    final theme = Theme.of(context);
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
       itemCount: _projects.length,
       itemBuilder: (context, index) {
         final project = _projects[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              child: Text(
-                _getInitials(project.name),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            title: Text(
-              project.name,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(
-              '${project.messages.length} messages',
-              style: TextStyle(
-                color: _isDarkMode ? Colors.white54 : Colors.black45,
-              ),
-            ),
-            trailing: PopupMenuButton<String>(
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _openChatEditor(project);
-                    break;
-                  case 'delete':
-                    _deleteProject(project.id);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text('Edit'),
-                    contentPadding: EdgeInsets.zero,
+        final hasMessages = project.messages.isNotEmpty;
+        final lastMessage = hasMessages ? project.messages.last : null;
+
+        return InkWell(
+          onTap: () => _openChatEditor(project),
+          onLongPress: () => _deleteProject(project.id),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Hero(
+                  tag: 'profile_${project.id}',
+                  child: CircleAvatar(
+                    radius: 25,
+                    backgroundColor: const Color(0xFF6B7B8D),
+                    child: Text(
+                      _getInitials(project.name),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: ListTile(
-                    leading: Icon(Icons.delete, color: Colors.red),
-                    title: Text('Delete', style: TextStyle(color: Colors.red)),
-                    contentPadding: EdgeInsets.zero,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              project.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 17,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            _formatProjectTime(project),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: index == 0
+                                  ? const Color(0xFF00A884)
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (lastMessage != null &&
+                              lastMessage.sender.index == 0) ...[
+                            Icon(
+                              Icons.done_all,
+                              size: 16,
+                              color: lastMessage.status.index == 3
+                                  ? AppTheme.readTick
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Expanded(
+                            child: Text(
+                              hasMessages
+                                  ? project.messages.last.text
+                                  : 'Start a conversation',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          if (index == 0)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF00A884),
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(10),
+                                ),
+                              ),
+                              child: const Text(
+                                '2',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            onTap: () => _openChatEditor(project),
           ),
         );
       },
     );
   }
 
+  String _formatProjectTime(dynamic project) {
+    if (project.messages.isEmpty) return '';
+    final time = project.messages.last.timestamp;
+    final now = DateTime.now();
+    if (time.day == now.day &&
+        time.month == now.month &&
+        time.year == now.year) {
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    }
+    return '${time.day}/${time.month}/${time.year}';
+  }
+
   String _getInitials(String name) {
+    if (name.isEmpty) return '?';
     final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
@@ -225,9 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _createNewChat() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ChatEditorScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ChatEditorScreen()),
     ).then((_) => _loadData());
   }
 
@@ -241,22 +430,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deleteProject(String projectId) async {
+    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Chat'),
-        content: const Text('Are you sure you want to delete this chat?'),
+        title: const Text('Delete chat?'),
+        content: const Text(
+          'Messages will be removed from this device.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('CANCEL'),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: const Text('DELETE'),
           ),
         ],
       ),
@@ -265,20 +457,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed == true) {
       await widget.storageService.deleteProject(projectId);
       _loadData();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Chat deleted')),
         );
       }
     }
-  }
-
-  Future<void> _toggleTheme() async {
-    final newValue = !_isDarkMode;
-    await widget.storageService.setThemeMode(newValue);
-    setState(() {
-      _isDarkMode = newValue;
-    });
   }
 }

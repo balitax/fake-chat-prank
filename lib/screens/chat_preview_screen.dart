@@ -26,27 +26,46 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
   final ScreenshotService _screenshotService = ScreenshotService();
   final ScreenshotController _screenshotController = ScreenshotController();
   final GlobalKey _chatAreaKey = GlobalKey();
-  
+
   bool _isCapturing = false;
   bool _hideControls = false;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF111B21) : Colors.white,
       appBar: AppBar(
-        backgroundColor: widget.isDarkMode 
-            ? const Color(0xFF1F2C34) 
-            : const Color(0xFF128C7E),
-        title: Text(widget.project.name),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.project.name,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFE9EDEF) : Colors.white,
+              ),
+            ),
+            Text(
+              'Preview',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? const Color(0xFF8696A0) : Colors.white70,
+              ),
+            ),
+          ],
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, size: 24),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           if (!_hideControls)
             IconButton(
-              icon: const Icon(Icons.edit),
+              icon: const Icon(Icons.edit_outlined, size: 22),
               onPressed: () => Navigator.pop(context),
               tooltip: 'Edit',
             ),
@@ -55,17 +74,19 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.camera_alt),
+                : const Icon(Icons.share_outlined, size: 22),
             onPressed: _isCapturing ? null : _captureScreenshot,
-            tooltip: 'Screenshot',
+            tooltip: 'Export',
           ),
           IconButton(
-            icon: Icon(_hideControls ? Icons.visibility : Icons.visibility_off),
+            icon: Icon(
+              _hideControls
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              size: 22,
+            ),
             onPressed: () {
               setState(() {
                 _hideControls = !_hideControls;
@@ -73,18 +94,18 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
             },
             tooltip: _hideControls ? 'Show Controls' : 'Hide Controls',
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: RepaintBoundary(
         key: _chatAreaKey,
         child: Column(
           children: [
-            // Chat Header
             ChatHeader(
               profile: widget.project.profile,
               isDarkMode: widget.isDarkMode,
+              onEditPressed: () {},
             ),
-            // Chat Messages
             Expanded(
               child: Container(
                 color: AppTheme.getChatBackground(widget.isDarkMode),
@@ -93,26 +114,24 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
                     : _buildMessagesList(),
               ),
             ),
-            // Watermark (if enabled and controls are hidden)
             if (widget.showWatermark && _hideControls)
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 color: AppTheme.getChatBackground(widget.isDarkMode),
                 child: Center(
                   child: Text(
-                    'Fake Chat Simulator',
+                    'Created with Fake Chat Simulator',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: widget.isDarkMode 
-                          ? Colors.white24 
-                          : Colors.black26,
+                      fontSize: 11,
+                      color: widget.isDarkMode
+                          ? const Color(0xFF8696A0).withValues(alpha: 0.4)
+                          : const Color(0xFF667781).withValues(alpha: 0.3),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
               ),
-            // Input UI (visual only in preview)
-            if (!_hideControls)
-              _buildInputArea(),
+            if (!_hideControls) _buildInputArea(),
           ],
         ),
       ),
@@ -126,15 +145,19 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
         children: [
           Icon(
             Icons.chat_bubble_outline,
-            size: 64,
-            color: widget.isDarkMode ? Colors.white24 : Colors.black26,
+            size: 48,
+            color: widget.isDarkMode
+                ? const Color(0xFF8696A0).withValues(alpha: 0.3)
+                : const Color(0xFF667781).withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'No messages',
             style: TextStyle(
-              fontSize: 16,
-              color: widget.isDarkMode ? Colors.white54 : Colors.black45,
+              fontSize: 15,
+              color: widget.isDarkMode
+                  ? const Color(0xFF8696A0)
+                  : const Color(0xFF667781),
             ),
           ),
         ],
@@ -144,11 +167,12 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
 
   Widget _buildMessagesList() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       itemCount: widget.project.messages.length,
       itemBuilder: (context, index) {
         final message = widget.project.messages[index];
-        final showTail = index == widget.project.messages.length - 1 ||
+        final showTail =
+            index == widget.project.messages.length - 1 ||
             widget.project.messages[index + 1].sender != message.sender;
 
         return ChatBubble(
@@ -161,46 +185,66 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
   }
 
   Widget _buildInputArea() {
+    final isDark = widget.isDarkMode;
+    final iconColor = isDark
+        ? const Color(0xFF8696A0)
+        : const Color(0xFF667781);
+    final inputBg = isDark ? const Color(0xFF2A3942) : Colors.white;
+    final chatBg = isDark
+        ? const Color(0xFF0B141A)
+        : const Color(0xFFEFE7DE);
+
     return Container(
-      color: widget.isDarkMode ? const Color(0xFF1F2C34) : Colors.white,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
+      color: chatBg,
       child: SafeArea(
         top: false,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Icon(
-              Icons.insert_emoticon,
-              color: widget.isDarkMode ? Colors.white54 : Colors.black45,
-            ),
-            const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                constraints: const BoxConstraints(minHeight: 48),
                 decoration: BoxDecoration(
-                  color: widget.isDarkMode 
-                      ? const Color(0xFF3A3A3A)
-                      : const Color(0xFFF7F8FA),
+                  color: inputBg,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: Text(
-                  'Type a message...',
-                  style: TextStyle(
-                    color: widget.isDarkMode ? Colors.white38 : Colors.black38,
-                  ),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Icon(
+                        Icons.emoji_emotions_outlined,
+                        color: iconColor,
+                        size: 24,
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          'Message',
+                          style: TextStyle(color: iconColor, fontSize: 17),
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.attach_file, color: iconColor, size: 22),
+                    const SizedBox(width: 12),
+                    Icon(Icons.camera_alt, color: iconColor, size: 22),
+                    const SizedBox(width: 12),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF128C7E),
+              height: 48,
+              width: 48,
+              decoration: const BoxDecoration(
+                color: Color(0xFF00A884),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.mic,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: const Icon(Icons.mic, color: Colors.white, size: 22),
             ),
           ],
         ),
@@ -214,19 +258,20 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
     });
 
     try {
-      // Capture the widget
       Uint8List? imageBytes;
       try {
+        final mediaQueryData = MediaQuery.of(context);
         imageBytes = await _screenshotController.captureFromWidget(
-          Material(
-            color: widget.isDarkMode ? Colors.black : Colors.white,
-            child: RepaintBoundary(
-              key: _chatAreaKey,
+          MediaQuery(
+            data: mediaQueryData,
+            child: Material(
+              color: widget.isDarkMode ? Colors.black : Colors.white,
               child: Column(
                 children: [
                   ChatHeader(
                     profile: widget.project.profile,
                     isDarkMode: widget.isDarkMode,
+                    onEditPressed: () {},
                   ),
                   Expanded(
                     child: Container(
@@ -245,8 +290,8 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
                           'Fake Chat Simulator',
                           style: TextStyle(
                             fontSize: 12,
-                            color: widget.isDarkMode 
-                                ? Colors.white24 
+                            color: widget.isDarkMode
+                                ? Colors.white24
                                 : Colors.black26,
                           ),
                         ),
@@ -267,25 +312,18 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
         throw Exception('Failed to capture screenshot');
       }
 
-      // Save to gallery
-      final String? savedPath = await _screenshotService.saveToGallery(imageBytes);
+      final String? savedPath = await _screenshotService.saveToGallery(
+        imageBytes,
+      );
 
       if (mounted) {
         if (savedPath != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Screenshot saved to: $savedPath'),
-              action: SnackBarAction(
-                label: 'OK',
-                onPressed: () {},
-              ),
-            ),
+            SnackBar(content: Text('Saved to: $savedPath')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save screenshot. Check permissions.'),
-            ),
+            const SnackBar(content: Text('Failed to save. Check permissions.')),
           );
         }
       }

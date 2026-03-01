@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class TypingIndicator extends StatefulWidget {
   final bool isDarkMode;
@@ -37,53 +38,54 @@ class _TypingIndicatorState extends State<TypingIndicator>
   Widget build(BuildContext context) {
     if (!widget.show) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.only(left: 8, right: 48, top: 2, bottom: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: widget.isDarkMode 
-            ? const Color(0xFF2A2A2A)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(3, (index) {
-          return AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              double offset = 0;
-              final animationValue = _controller.value;
-              
-              // Create wave animation for each dot
-              final phase = (animationValue + index * 0.2) % 1.0;
-              if (phase < 0.25) {
-                offset = -2;
-              } else if (phase < 0.5) {
-                offset = 0;
-              } else if (phase < 0.75) {
-                offset = 2;
-              } else {
-                offset = 0;
-              }
+    final bubbleColor = AppTheme.getOtherMessageBubble(widget.isDarkMode);
 
-              return Transform.translate(
-                offset: Offset(0, offset),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: widget.isDarkMode 
-                        ? Colors.white54 
-                        : Colors.black38,
-                    shape: BoxShape.circle,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(left: 10, right: 64, top: 2, bottom: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: bubbleColor,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(0),
+            topRight: Radius.circular(8),
+            bottomLeft: Radius.circular(8),
+            bottomRight: Radius.circular(8),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            return AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final phase = (_controller.value + index * 0.2) % 1.0;
+                double offset = 0;
+                if (phase < 0.25) {
+                  offset = -3 * (phase / 0.25);
+                } else if (phase < 0.5) {
+                  offset = -3 * (1 - (phase - 0.25) / 0.25);
+                }
+
+                return Transform.translate(
+                  offset: Offset(0, offset),
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode
+                          ? const Color(0xFF8696A0)
+                          : const Color(0xFF9BA4AA),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        }),
+                );
+              },
+            );
+          }),
+        ),
       ),
     );
   }

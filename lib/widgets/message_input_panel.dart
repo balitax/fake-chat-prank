@@ -24,11 +24,18 @@ class MessageInputPanel extends StatefulWidget {
 class _MessageInputPanelState extends State<MessageInputPanel> {
   final TextEditingController _controller = TextEditingController();
   late MessageSender _currentSender;
+  bool _hasText = false;
 
   @override
   void initState() {
     super.initState();
     _currentSender = widget.defaultSender;
+    _controller.addListener(() {
+      final hasText = _controller.text.trim().isNotEmpty;
+      if (hasText != _hasText) {
+        setState(() => _hasText = hasText);
+      }
+    });
   }
 
   @override
@@ -47,8 +54,8 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
 
   void _toggleSender() {
     setState(() {
-      _currentSender = _currentSender == MessageSender.me 
-          ? MessageSender.other 
+      _currentSender = _currentSender == MessageSender.me
+          ? MessageSender.other
           : MessageSender.me;
     });
     widget.onToggleSender?.call();
@@ -56,111 +63,154 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDarkMode;
+    final inputBg = isDark ? const Color(0xFF2A3942) : Colors.white;
+    final iconColor = isDark
+        ? const Color(0xFF8696A0)
+        : const Color(0xFF667781);
+    final chatBg = isDark
+        ? const Color(0xFF0B141A)
+        : const Color(0xFFEFE7DE);
+
     return Container(
-      color: widget.isDarkMode ? const Color(0xFF1F2C34) : Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
+      color: chatBg,
       child: SafeArea(
         top: false,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Sender toggle button
-            _buildSenderToggle(),
-            const SizedBox(width: 8),
-            // Text input
+            // Input pill
             Expanded(
               child: Container(
-                constraints: const BoxConstraints(maxHeight: 120),
+                constraints: const BoxConstraints(minHeight: 48),
                 decoration: BoxDecoration(
-                  color: widget.isDarkMode 
-                      ? const Color(0xFF3A3A3A)
-                      : const Color(0xFFF7F8FA),
+                  color: inputBg,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: TextField(
-                  controller: _controller,
-                  enabled: widget.enabled,
-                  maxLines: null,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: _currentSender == MessageSender.me 
-                        ? 'Type a message...' 
-                        : 'Type a reply...',
-                    hintStyle: TextStyle(
-                      color: widget.isDarkMode 
-                          ? Colors.white38 
-                          : Colors.black38,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 4),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.emoji_emotions_outlined,
+                          color: iconColor,
+                          size: 24,
+                        ),
+                        onPressed: () {},
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(),
+                      ),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, 
-                      vertical: 10,
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: TextField(
+                          controller: _controller,
+                          enabled: widget.enabled,
+                          maxLines: 6,
+                          minLines: 1,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: InputDecoration(
+                            hintText: 'Message',
+                            hintStyle: TextStyle(
+                              color: iconColor,
+                              fontSize: 17,
+                            ),
+                            filled: false,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 0,
+                              vertical: 10,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: isDark
+                                ? const Color(0xFFE9EDEF)
+                                : const Color(0xFF111B21),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  style: TextStyle(
-                    color: widget.isDarkMode ? Colors.white : Colors.black87,
-                  ),
-                  onSubmitted: (_) => _sendMessage(),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Transform.rotate(
+                              angle: 0.8,
+                              child: Icon(
+                                Icons.attach_file,
+                                color: iconColor,
+                                size: 22,
+                              ),
+                            ),
+                            onPressed: () {},
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          ),
+                          if (!_hasText)
+                            IconButton(
+                              icon: Icon(
+                                Icons.currency_rupee,
+                                color: iconColor,
+                                size: 22,
+                              ),
+                              onPressed: () {},
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                            ),
+                          if (!_hasText)
+                            IconButton(
+                              icon: Icon(
+                                Icons.camera_alt,
+                                color: iconColor,
+                                size: 22,
+                              ),
+                              onPressed: () {},
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                            ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            // Send button
-            Container(
-              decoration: BoxDecoration(
-                color: widget.isDarkMode 
-                    ? const Color(0xFF128C7E)
-                    : const Color(0xFF128C7E),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                onPressed: widget.enabled ? _sendMessage : null,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSenderToggle() {
-    final bool isMe = _currentSender == MessageSender.me;
-    
-    return GestureDetector(
-      onTap: _toggleSender,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isMe 
-              ? (widget.isDarkMode ? const Color(0xFF056162) : const Color(0xFFDCF8C6))
-              : (widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isMe 
-                ? (widget.isDarkMode ? Colors.white24 : const Color(0xFFDCF8C6))
-                : (widget.isDarkMode ? Colors.white24 : Colors.grey.shade300),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isMe ? Icons.person : Icons.person_outline,
-              size: 16,
-              color: isMe 
-                  ? (widget.isDarkMode ? Colors.white : Colors.black54)
-                  : (widget.isDarkMode ? Colors.white70 : Colors.black54),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              isMe ? 'Me' : 'Other',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isMe 
-                    ? (widget.isDarkMode ? Colors.white : Colors.black54)
-                    : (widget.isDarkMode ? Colors.white70 : Colors.black54),
+            const SizedBox(width: 6),
+            // Send/Mic button
+            GestureDetector(
+              onLongPress: _toggleSender,
+              child: Container(
+                height: 48,
+                width: 48,
+                margin: const EdgeInsets.only(bottom: 0),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF00A884),
+                  shape: BoxShape.circle,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: widget.enabled
+                        ? (_hasText ? _sendMessage : null)
+                        : null,
+                    child: Icon(
+                      _hasText ? Icons.send : Icons.mic,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

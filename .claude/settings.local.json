@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze 2>&1 | tail -5)",
+      "Bash(flutter analyze 2>&1 | tail -3)",
+      "Bash(flutter pub get 2>&1 | tail -5)"
+    ]
+  }
+}

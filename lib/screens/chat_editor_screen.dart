@@ -22,19 +22,21 @@ class ChatEditorScreen extends StatefulWidget {
 class _ChatEditorScreenState extends State<ChatEditorScreen> {
   final StorageService _storageService = StorageService();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   late ChatProjectModel _project;
   bool _isDarkMode = false;
   bool _isLoading = true;
   bool _isTyping = false;
   bool _autoScroll = true;
   bool _showWatermark = true;
-  
+
   final ScrollController _scrollController = ScrollController();
   MessageSender _defaultSender = MessageSender.me;
   Timer? _autoMessageTimer;
   final TextEditingController _autoMessageController = TextEditingController();
-  final TextEditingController _delayController = TextEditingController(text: '2');
+  final TextEditingController _delayController = TextEditingController(
+    text: '2',
+  );
 
   @override
   void initState() {
@@ -120,7 +122,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       text: text,
       sender: sender,
       timestamp: _project.messages.isNotEmpty && index > 0
-          ? _project.messages[index - 1].timestamp.add(const Duration(minutes: 1))
+          ? _project.messages[index - 1].timestamp.add(
+              const Duration(minutes: 1),
+            )
           : DateTime.now(),
       status: MessageStatus.sent,
     );
@@ -185,149 +189,227 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       if (image != null) {
         setState(() {
           _project = _project.copyWith(
-            profile: _project.profile.copyWith(
-              profileImagePath: image.path,
-            ),
+            profile: _project.profile.copyWith(profileImagePath: image.path),
           );
         });
         _saveProject();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to pick image')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to pick image')));
       }
     }
   }
 
   void _showEditMessageDialog(MessageModel message) {
     final controller = TextEditingController(text: message.text);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Message'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: null,
-          decoration: const InputDecoration(
-            hintText: 'Enter message',
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              _updateMessage(message.id, controller.text);
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddMessageDialog() {
-    final controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Message'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: null,
-          decoration: const InputDecoration(
-            hintText: 'Enter message',
-          ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          left: 20,
+          right: 20,
+          top: 12,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                _addMessage(controller.text.trim(), _defaultSender);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
-          ),
-        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Edit Message',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLines: 8,
+              minLines: 1,
+              decoration: InputDecoration(
+                hintText: 'Enter message...',
+                prefixIcon: Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: isDark ? const Color(0xFF8696A0) : const Color(0xFF667781),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () {
+                  _updateMessage(message.id, controller.text);
+                  Navigator.pop(context);
+                },
+                child: const Text('Save'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _showInsertMessageDialog(int index) {
     final controller = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Insert Message'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: null,
-          decoration: const InputDecoration(
-            hintText: 'Enter message',
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                _insertMessageAt(index, controller.text.trim(), _defaultSender);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text('Insert'),
-          ),
-        ],
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          left: 20,
+          right: 20,
+          top: 12,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Insert Message',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLines: 8,
+              minLines: 1,
+              decoration: InputDecoration(
+                hintText: 'Enter message to insert...',
+                prefixIcon: Icon(
+                  Icons.add_comment_outlined,
+                  size: 20,
+                  color: isDark ? const Color(0xFF8696A0) : const Color(0xFF667781),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (controller.text.trim().isNotEmpty) {
+                    _insertMessageAt(
+                      index,
+                      controller.text.trim(),
+                      _defaultSender,
+                    );
+                  }
+                  Navigator.pop(context);
+                },
+                child: const Text('Insert'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _showMessageOptions(MessageModel message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        padding: const EdgeInsets.only(top: 12, bottom: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildOptionTile(
+              context,
+              icon: Icons.edit_outlined,
+              title: 'Edit',
               onTap: () {
                 Navigator.pop(context);
                 _showEditMessageDialog(message);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.add),
-              title: const Text('Insert message after'),
+            _buildOptionTile(
+              context,
+              icon: Icons.add_circle_outline,
+              title: 'Insert after',
               onTap: () {
                 Navigator.pop(context);
                 final index = _project.messages.indexOf(message) + 1;
                 _showInsertMessageDialog(index);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+            Divider(
+              color: isDark ? const Color(0xFF222D34) : const Color(0xFFE9EDEF),
+              indent: 56,
+            ),
+            _buildOptionTile(
+              context,
+              icon: Icons.delete_outline,
+              title: 'Delete',
+              color: const Color(0xFFEA4335),
               onTap: () {
                 Navigator.pop(context);
                 _deleteMessage(message.id);
@@ -335,6 +417,64 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultColor = isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21);
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      leading: Icon(icon, color: color ?? defaultColor, size: 22),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: color ?? defaultColor,
+          fontSize: 16,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  void _showClearDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear this chat?'),
+        content: const Text(
+          'All messages will be permanently deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _project = _project.copyWith(
+                  messages: [],
+                  updatedAt: DateTime.now(),
+                );
+              });
+              _saveProject();
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFEA4335),
+            ),
+            child: const Text('CLEAR'),
+          ),
+        ],
       ),
     );
   }
@@ -362,16 +502,21 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   }
 
   void _openPreview() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatPreviewScreen(
-          project: _project,
-          isDarkMode: _isDarkMode,
-          showWatermark: _showWatermark,
-        ),
-      ),
-    );
+    final adService = AdService();
+    adService.showInterstitialAd(onComplete: () {
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatPreviewScreen(
+              project: _project,
+              isDarkMode: _isDarkMode,
+              showWatermark: _showWatermark,
+            ),
+          ),
+        );
+      }
+    });
   }
 
   void _openSettings() {
@@ -392,154 +537,275 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
 
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _project.profile.name);
-    final statusController = TextEditingController(text: _project.profile.statusText ?? '');
-    final lastSeenController = TextEditingController(text: _project.profile.lastSeenText ?? '');
-    
-    showDialog(
+    final statusController = TextEditingController(
+      text: _project.profile.statusText ?? '',
+    );
+    final lastSeenController = TextEditingController(
+      text: _project.profile.lastSeenText ?? '',
+    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit Contact'),
-          content: SingleChildScrollView(
+        builder: (context, setDialogState) => Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            left: 20,
+            right: 20,
+            top: 12,
+          ),
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile image picker
-                GestureDetector(
-                  onTap: () async {
-                    await _pickProfileImage();
-                    if (mounted && context.mounted) Navigator.pop(context);
-                  },
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                    backgroundImage: _project.profile.profileImagePath != null
-                        ? FileImage(File(_project.profile.profileImagePath!))
-                        : null,
-                    child: _project.profile.profileImagePath == null
-                        ? const Icon(Icons.add_a_photo, size: 30)
-                        : null,
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+                Text(
+                  'Edit Contact',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Profile image
+                Center(
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 48,
+                        backgroundColor: const Color(0xFF6B7B8D),
+                        backgroundImage:
+                            _project.profile.profileImagePath != null
+                            ? FileImage(
+                                File(_project.profile.profileImagePath!),
+                              )
+                            : null,
+                        child: _project.profile.profileImagePath == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.white70,
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () async {
+                            await _pickProfileImage();
+                            setDialogState(() {});
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00A884),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Contact Name',
-                    border: OutlineInputBorder(),
+                    labelText: 'Name',
+                    prefixIcon: Icon(Icons.person_outline, size: 20),
                   ),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<OnlineStatus>(
-                  value: _project.profile.onlineStatus,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: OnlineStatus.online, child: Text('Online')),
-                    DropdownMenuItem(value: OnlineStatus.typing, child: Text('Typing')),
-                    DropdownMenuItem(value: OnlineStatus.offline, child: Text('Offline')),
-                  ],
-                  onChanged: (value) {
-                    setDialogState(() {
-                      _project = _project.copyWith(
-                        profile: _project.profile.copyWith(onlineStatus: value),
-                      );
-                    });
-                  },
-                ),
+                _buildModernDropdown(context, setDialogState),
                 const SizedBox(height: 12),
                 TextField(
                   controller: statusController,
                   decoration: const InputDecoration(
-                    labelText: 'Custom Status (optional)',
-                    border: OutlineInputBorder(),
+                    labelText: 'Status (optional)',
+                    prefixIcon: Icon(Icons.info_outline, size: 20),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: lastSeenController,
                   decoration: const InputDecoration(
-                    labelText: 'Last Seen (optional)',
-                    border: OutlineInputBorder(),
+                    labelText: 'Last seen text (optional)',
+                    prefixIcon: Icon(Icons.access_time, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _project = _project.copyWith(
+                          name: nameController.text,
+                          profile: _project.profile.copyWith(
+                            name: nameController.text,
+                            statusText: statusController.text.isEmpty
+                                ? null
+                                : statusController.text,
+                            lastSeenText: lastSeenController.text.isEmpty
+                                ? null
+                                : lastSeenController.text,
+                          ),
+                        );
+                      });
+                      _saveProject();
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Save'),
                   ),
                 ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _project = _project.copyWith(
-                    name: nameController.text,
-                    profile: _project.profile.copyWith(
-                      name: nameController.text,
-                      statusText: statusController.text.isEmpty ? null : statusController.text,
-                      lastSeenText: lastSeenController.text.isEmpty ? null : lastSeenController.text,
-                    ),
-                  );
-                });
-                _saveProject();
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildModernDropdown(
+    BuildContext context,
+    StateSetter setDialogState,
+  ) {
+    return DropdownButtonFormField<OnlineStatus>(
+      value: _project.profile.onlineStatus,
+      decoration: const InputDecoration(
+        labelText: 'Status',
+        prefixIcon: Icon(Icons.circle, size: 12),
+      ),
+      items: const [
+        DropdownMenuItem(value: OnlineStatus.online, child: Text('Online')),
+        DropdownMenuItem(value: OnlineStatus.typing, child: Text('Typing')),
+        DropdownMenuItem(value: OnlineStatus.offline, child: Text('Offline')),
+      ],
+      onChanged: (value) {
+        setDialogState(() {
+          _project = _project.copyWith(
+            profile: _project.profile.copyWith(onlineStatus: value),
+          );
+        });
+      },
     );
   }
 
   void _showAutoMessageDialog() {
     _autoMessageController.clear();
     _delayController.text = '2';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Auto Incoming Message'),
-        content: Column(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          left: 20,
+          right: 20,
+          top: 12,
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Auto Reply',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Simulate an incoming message',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? const Color(0xFF8696A0) : const Color(0xFF667781),
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _autoMessageController,
+              autofocus: true,
+              maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Message',
-                hintText: 'Enter automatic reply',
-                border: OutlineInputBorder(),
+                hintText: 'What should they say?',
+                prefixIcon: Icon(Icons.chat_bubble_outline, size: 20),
               ),
-              maxLines: 2,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _delayController,
+              keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Delay (seconds)',
-                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.timer_outlined, size: 20),
               ),
-              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _startAutoMessage();
+                },
+                child: const Text('Start Timer'),
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _startAutoMessage();
-            },
-            child: const Text('Start'),
-          ),
-        ],
       ),
     );
   }
@@ -547,24 +813,45 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final chatBg = AppTheme.getChatBackground(_isDarkMode);
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(_project.name),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _project.name,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFE9EDEF) : Colors.white,
+              ),
+            ),
+            Text(
+              '${_project.messages.length} messages',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? const Color(0xFF8696A0) : Colors.white70,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.preview),
+            icon: const Icon(Icons.visibility_outlined, size: 22),
             onPressed: _openPreview,
             tooltip: 'Preview',
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _openSettings,
-            tooltip: 'Settings',
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -578,32 +865,28 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 case 'clear':
                   _showClearDialog();
                   break;
+                case 'settings':
+                  _openSettings();
+                  break;
               }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit_profile',
-                child: ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text('Edit Contact'),
-                  contentPadding: EdgeInsets.zero,
-                ),
+                child: Text('Edit contact'),
               ),
               const PopupMenuItem(
                 value: 'auto_message',
-                child: ListTile(
-                  leading: Icon(Icons.schedule),
-                  title: Text('Auto Reply'),
-                  contentPadding: EdgeInsets.zero,
-                ),
+                child: Text('Auto reply'),
               ),
               const PopupMenuItem(
+                value: 'settings',
+                child: Text('Settings'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
                 value: 'clear',
-                child: ListTile(
-                  leading: Icon(Icons.delete_sweep, color: Colors.red),
-                  title: Text('Clear All', style: TextStyle(color: Colors.red)),
-                  contentPadding: EdgeInsets.zero,
-                ),
+                child: Text('Clear chat'),
               ),
             ],
           ),
@@ -611,73 +894,76 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       ),
       body: Column(
         children: [
-          // Chat Header Preview
+          // Chat header preview
           ChatHeader(
             profile: _project.profile,
             isDarkMode: _isDarkMode,
             onEditPressed: _showEditProfileDialog,
           ),
-          // Messages List
+
+          // Messages area
           Expanded(
             child: Container(
-              color: AppTheme.getChatBackground(_isDarkMode),
+              color: chatBg,
               child: _project.messages.isEmpty
                   ? _buildEmptyState()
                   : _buildMessagesList(),
             ),
           ),
-          // Typing Indicator
-          if (_isTyping)
-            TypingIndicator(isDarkMode: _isDarkMode, show: _isTyping),
-          // Input Panel
-          MessageInputPanel(
-            onSendMessage: _addMessage,
-            defaultSender: _defaultSender,
-            isDarkMode: _isDarkMode,
-            onToggleSender: () {
-              setState(() {
-                _defaultSender = _defaultSender == MessageSender.me
-                    ? MessageSender.other
-                    : MessageSender.me;
-              });
-            },
+
+          // Typing + Input
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isTyping)
+                Container(
+                  color: chatBg,
+                  child: TypingIndicator(
+                    isDarkMode: _isDarkMode,
+                    show: _isTyping,
+                  ),
+                ),
+              MessageInputPanel(
+                onSendMessage: _addMessage,
+                defaultSender: _defaultSender,
+                isDarkMode: _isDarkMode,
+                onToggleSender: () {
+                  setState(() {
+                    _defaultSender = _defaultSender == MessageSender.me
+                        ? MessageSender.other
+                        : MessageSender.me;
+                  });
+                },
+              ),
+            ],
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddMessageDialog,
-        child: const Icon(Icons.add),
       ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 64,
-            color: _isDarkMode ? Colors.white24 : Colors.black26,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: _isDarkMode
+              ? const Color(0xFF182229).withValues(alpha: 0.9)
+              : const Color(0xFFFFEECC).withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          'Start the conversation by typing a message below.\nLong-press the send button to switch sender.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13.5,
+            color: _isDarkMode
+                ? const Color(0xFF8696A0)
+                : const Color(0xFF54656F),
+            height: 1.4,
           ),
-          const SizedBox(height: 16),
-          Text(
-            'No messages yet',
-            style: TextStyle(
-              fontSize: 18,
-              color: _isDarkMode ? Colors.white54 : Colors.black45,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap + to add your first message',
-            style: TextStyle(
-              fontSize: 14,
-              color: _isDarkMode ? Colors.white38 : Colors.black38,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -685,11 +971,12 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   Widget _buildMessagesList() {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       itemCount: _project.messages.length,
       itemBuilder: (context, index) {
         final message = _project.messages[index];
-        final showTail = index == _project.messages.length - 1 ||
+        final showTail =
+            index == _project.messages.length - 1 ||
             _project.messages[index + 1].sender != message.sender;
 
         return ChatBubble(
@@ -699,38 +986,6 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
           onLongPress: () => _showMessageOptions(message),
         );
       },
-    );
-  }
-
-  void _showClearDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear All Messages'),
-        content: const Text('Are you sure you want to delete all messages?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _project = _project.copyWith(
-                  messages: [],
-                  updatedAt: DateTime.now(),
-                );
-              });
-              _saveProject();
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
     );
   }
 }

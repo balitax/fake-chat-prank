@@ -22,16 +22,16 @@ void main() {
     await storageService.init();
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(FakeChatApp(storageService: storageService));
+    await tester.pumpWidget(FakeChatApp(storageService: storageService, initialDarkMode: false));
 
     // Wait for the async load to complete
     await tester.pumpAndSettle();
 
     // Verify that the app title is displayed
-    expect(find.text('Fake Chat Simulator'), findsOneWidget);
+    expect(find.text('WhatsApp'), findsOneWidget);
 
     // Verify that the empty state is shown (no projects)
-    expect(find.text('No Chats Yet'), findsOneWidget);
+    expect(find.text('No chats yet'), findsOneWidget);
 
     // Verify that the "New Chat" button exists
     expect(find.text('New Chat'), findsOneWidget);
@@ -41,18 +41,18 @@ void main() {
   testWidgets('FakeChatApp smoke test - theme toggle button exists', (WidgetTester tester) async {
     // Set up mock shared preferences for testing
     SharedPreferences.setMockInitialValues({});
-    
+
     // Create and initialize the storage service
     final storageService = StorageService();
     await storageService.init();
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(FakeChatApp(storageService: storageService));
+    await tester.pumpWidget(FakeChatApp(storageService: storageService, initialDarkMode: false));
 
     // Wait for the async load to complete
     await tester.pumpAndSettle();
 
     // Verify that theme toggle button exists
-    expect(find.byIcon(Icons.dark_mode), findsOneWidget);
+    expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
   });
 }
