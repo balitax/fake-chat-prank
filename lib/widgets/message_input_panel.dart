@@ -15,7 +15,16 @@ class MessageInputPanel extends StatefulWidget {
     required this.isDarkMode,
     this.onToggleSender,
     this.enabled = true,
+    this.isGroupChat = false,
+    this.groupMembers = const [],
+    this.onMemberSelected,
+    this.selectedMemberId,
   });
+
+  final bool isGroupChat;
+  final List<GroupMemberModel> groupMembers;
+  final Function(String?)? onMemberSelected;
+  final String? selectedMemberId;
 
   @override
   State<MessageInputPanel> createState() => _MessageInputPanelState();
@@ -68,9 +77,7 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
     final iconColor = isDark
         ? const Color(0xFF8696A0)
         : const Color(0xFF667781);
-    final chatBg = isDark
-        ? const Color(0xFF0B141A)
-        : const Color(0xFFEFE7DE);
+    final chatBg = isDark ? const Color(0xFF0B141A) : const Color(0xFFEFE7DE);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
@@ -185,6 +192,53 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                 ),
               ),
             ),
+            if (widget.isGroupChat && widget.groupMembers.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 6, bottom: 6),
+                child: PopupMenuButton<String>(
+                  icon: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: widget.selectedMemberId != null
+                        ? Color(
+                            widget.groupMembers
+                                .firstWhere(
+                                  (m) => m.id == widget.selectedMemberId,
+                                )
+                                .colorValue,
+                          )
+                        : Colors.grey,
+                    child: Text(
+                      widget.selectedMemberId != null
+                          ? widget.groupMembers
+                                .firstWhere(
+                                  (m) => m.id == widget.selectedMemberId,
+                                )
+                                .name[0]
+                                .toUpperCase()
+                          : '?',
+                      style: const TextStyle(fontSize: 10, color: Colors.white),
+                    ),
+                  ),
+                  onSelected: widget.onMemberSelected,
+                  itemBuilder: (context) => widget.groupMembers
+                      .map(
+                        (m) => PopupMenuItem(
+                          value: m.id,
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 10,
+                                backgroundColor: Color(m.colorValue),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(m.name),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
             const SizedBox(width: 6),
             // Send/Mic button
             GestureDetector(

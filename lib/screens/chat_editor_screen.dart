@@ -29,6 +29,7 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   bool _isTyping = false;
   bool _autoScroll = true;
   bool _showWatermark = true;
+  GroupMemberModel? _selectedGroupMember;
 
   final ScrollController _scrollController = ScrollController();
   MessageSender _defaultSender = MessageSender.me;
@@ -103,6 +104,49 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       sender: sender,
       timestamp: DateTime.now(),
       status: MessageStatus.sent,
+      groupMemberId:
+          sender == MessageSender.other &&
+              _project.isGroupChat &&
+              _project.groupMembers.isNotEmpty
+          ? _project
+                .groupMembers[0]
+                .id // Default to first member for simple "other" send
+          : null,
+    );
+
+    setState(() {
+      _project = _project.copyWith(
+        messages: [..._project.messages, message],
+        updatedAt: DateTime.now(),
+      );
+    });
+
+    _saveProject();
+    _scrollToBottom();
+  }
+
+  void _addMessageWithMember(String text, MessageSender sender) {
+    if (sender == MessageSender.other && _project.isGroupChat) {
+      if (_project.groupMembers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please add group members first')),
+        );
+        return;
+      }
+      if (_selectedGroupMember == null) {
+        _selectedGroupMember = _project.groupMembers[0];
+      }
+    }
+
+    final message = MessageModel(
+      id: const Uuid().v4(),
+      text: text,
+      sender: sender,
+      timestamp: DateTime.now(),
+      status: MessageStatus.sent,
+      groupMemberId: sender == MessageSender.other && _project.isGroupChat
+          ? _selectedGroupMember?.id
+          : null,
     );
 
     setState(() {
@@ -231,7 +275,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                  color: isDark
+                      ? const Color(0xFF3B4A54)
+                      : const Color(0xFFE9EDEF),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -242,7 +288,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+                color: isDark
+                    ? const Color(0xFFE9EDEF)
+                    : const Color(0xFF111B21),
               ),
             ),
             const SizedBox(height: 16),
@@ -256,7 +304,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 prefixIcon: Icon(
                   Icons.edit_outlined,
                   size: 20,
-                  color: isDark ? const Color(0xFF8696A0) : const Color(0xFF667781),
+                  color: isDark
+                      ? const Color(0xFF8696A0)
+                      : const Color(0xFF667781),
                 ),
               ),
             ),
@@ -306,7 +356,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                  color: isDark
+                      ? const Color(0xFF3B4A54)
+                      : const Color(0xFFE9EDEF),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -317,7 +369,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+                color: isDark
+                    ? const Color(0xFFE9EDEF)
+                    : const Color(0xFF111B21),
               ),
             ),
             const SizedBox(height: 16),
@@ -331,7 +385,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 prefixIcon: Icon(
                   Icons.add_comment_outlined,
                   size: 20,
-                  color: isDark ? const Color(0xFF8696A0) : const Color(0xFF667781),
+                  color: isDark
+                      ? const Color(0xFF8696A0)
+                      : const Color(0xFF667781),
                 ),
               ),
             ),
@@ -377,7 +433,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                color: isDark
+                    ? const Color(0xFF3B4A54)
+                    : const Color(0xFFE9EDEF),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -429,17 +487,16 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     Color? color,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultColor = isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21);
+    final defaultColor = isDark
+        ? const Color(0xFFE9EDEF)
+        : const Color(0xFF111B21);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
       leading: Icon(icon, color: color ?? defaultColor, size: 22),
       title: Text(
         title,
-        style: TextStyle(
-          color: color ?? defaultColor,
-          fontSize: 16,
-        ),
+        style: TextStyle(color: color ?? defaultColor, fontSize: 16),
       ),
       onTap: onTap,
     );
@@ -450,9 +507,7 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear this chat?'),
-        content: const Text(
-          'All messages will be permanently deleted.',
-        ),
+        content: const Text('All messages will be permanently deleted.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -503,20 +558,22 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
 
   void _openPreview() {
     final adService = AdService();
-    adService.showInterstitialAd(onComplete: () {
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatPreviewScreen(
-              project: _project,
-              isDarkMode: _isDarkMode,
-              showWatermark: _showWatermark,
+    adService.showInterstitialAd(
+      onComplete: () {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatPreviewScreen(
+                project: _project,
+                isDarkMode: _isDarkMode,
+                showWatermark: _showWatermark,
+              ),
             ),
-          ),
-        );
-      }
-    });
+          );
+        }
+      },
+    );
   }
 
   void _openSettings() {
@@ -571,19 +628,137 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                      color: isDark
+                          ? const Color(0xFF3B4A54)
+                          : const Color(0xFFE9EDEF),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Edit Contact',
+                  'Edit Chat Settings',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+                    color: isDark
+                        ? const Color(0xFFE9EDEF)
+                        : const Color(0xFF111B21),
                   ),
+                ),
+                const SizedBox(height: 16),
+                // Group Chat Toggle
+                SwitchListTile(
+                  title: const Text('Group Chat'),
+                  subtitle: const Text(
+                    'Enable group features and multiple members',
+                  ),
+                  value: _project.isGroupChat,
+                  activeColor: const Color(0xFF00A884),
+                  onChanged: (value) {
+                    setDialogState(() {
+                      _project = _project.copyWith(isGroupChat: value);
+                    });
+                  },
+                ),
+                if (_project.isGroupChat) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      'Group Members',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ..._project.groupMembers.map(
+                    (member) => ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Color(member.colorValue),
+                        child: Text(
+                          member.name[0].toUpperCase(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      title: Text(member.name),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        onPressed: () {
+                          setDialogState(() {
+                            final newMembers = _project.groupMembers
+                                .where((m) => m.id != member.id)
+                                .toList();
+                            _project = _project.copyWith(
+                              groupMembers: newMembers,
+                            );
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.add_circle_outline),
+                    title: const Text('Add Member'),
+                    onTap: () {
+                      _showAddMemberDialog((name, color) {
+                        setDialogState(() {
+                          final newMember = GroupMemberModel(
+                            id: const Uuid().v4(),
+                            name: name,
+                            colorValue: color,
+                          );
+                          _project = _project.copyWith(
+                            groupMembers: [..._project.groupMembers, newMember],
+                          );
+                        });
+                      });
+                    },
+                  ),
+                  const Divider(),
+                ],
+                const SizedBox(height: 12),
+                // Theme Selector
+                ChatThemeSelector(
+                  selectedThemeId: _project.chatThemeId,
+                  onThemeSelected: (themeId) {
+                    setDialogState(() {
+                      _project = _project.copyWith(chatThemeId: themeId);
+                    });
+                  },
+                ),
+                const Divider(),
+                // Custom Background
+                ListTile(
+                  leading: const Icon(Icons.image_outlined),
+                  title: const Text('Custom Background'),
+                  subtitle: Text(
+                    _project.customBackgroundPath != null
+                        ? 'Custom image selected'
+                        : 'Default background',
+                  ),
+                  trailing: _project.customBackgroundPath != null
+                      ? IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            setDialogState(() {
+                              _project = _project.copyWith(
+                                clearCustomBackground: true,
+                              );
+                            });
+                          },
+                        )
+                      : const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    final picker = ImagePicker();
+                    final image = await picker.pickImage(
+                      source: ImageSource.gallery,
+                    );
+                    if (image != null) {
+                      setDialogState(() {
+                        _project = _project.copyWith(
+                          customBackgroundPath: image.path,
+                        );
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 20),
                 // Profile image
@@ -621,7 +796,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                               color: const Color(0xFF00A884),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+                                color: isDark
+                                    ? const Color(0xFF1F2C34)
+                                    : Colors.white,
                                 width: 2,
                               ),
                             ),
@@ -721,6 +898,80 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     );
   }
 
+  void _showAddMemberDialog(Function(String, int) onAdded) {
+    final nameController = TextEditingController();
+    int selectedColor = GroupMemberModel.availableColors[0];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Group Member'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'Enter member name',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 20),
+              const Text('Pick a color:'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: GroupMemberModel.availableColors.map((color) {
+                  final isSelected = selectedColor == color;
+                  return GestureDetector(
+                    onTap: () {
+                      setDialogState(() {
+                        selectedColor = color;
+                      });
+                    },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Color(color),
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: isDark ? Colors.white : Colors.black,
+                                width: 2,
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (nameController.text.trim().isNotEmpty) {
+                  onAdded(nameController.text.trim(), selectedColor);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('ADD'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showAutoMessageDialog() {
     _autoMessageController.clear();
     _delayController.text = '2';
@@ -750,7 +1001,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3B4A54) : const Color(0xFFE9EDEF),
+                  color: isDark
+                      ? const Color(0xFF3B4A54)
+                      : const Color(0xFFE9EDEF),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -761,7 +1014,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21),
+                color: isDark
+                    ? const Color(0xFFE9EDEF)
+                    : const Color(0xFF111B21),
               ),
             ),
             const SizedBox(height: 4),
@@ -769,7 +1024,9 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
               'Simulate an incoming message',
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? const Color(0xFF8696A0) : const Color(0xFF667781),
+                color: isDark
+                    ? const Color(0xFF8696A0)
+                    : const Color(0xFF667781),
               ),
             ),
             const SizedBox(height: 16),
@@ -873,21 +1130,15 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit_profile',
-                child: Text('Edit contact'),
+                child: Text('Chat Settings'),
               ),
               const PopupMenuItem(
                 value: 'auto_message',
                 child: Text('Auto reply'),
               ),
-              const PopupMenuItem(
-                value: 'settings',
-                child: Text('Settings'),
-              ),
+              const PopupMenuItem(value: 'settings', child: Text('Settings')),
               const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'clear',
-                child: Text('Clear chat'),
-              ),
+              const PopupMenuItem(value: 'clear', child: Text('Clear chat')),
             ],
           ),
         ],
@@ -899,15 +1150,31 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
             profile: _project.profile,
             isDarkMode: _isDarkMode,
             onEditPressed: _showEditProfileDialog,
+            isGroupChat: _project.isGroupChat,
+            groupMembers: _project.groupMembers,
           ),
 
           // Messages area
           Expanded(
-            child: Container(
-              color: chatBg,
-              child: _project.messages.isEmpty
-                  ? _buildEmptyState()
-                  : _buildMessagesList(),
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: AppTheme.getThemeById(
+                    _project.chatThemeId,
+                  ).chatBg(_isDarkMode),
+                  child: _project.customBackgroundPath != null
+                      ? Image.file(
+                          File(_project.customBackgroundPath!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                _project.messages.isEmpty
+                    ? _buildEmptyState()
+                    : _buildMessagesList(),
+              ],
             ),
           ),
 
@@ -924,9 +1191,19 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                   ),
                 ),
               MessageInputPanel(
-                onSendMessage: _addMessage,
+                onSendMessage: _addMessageWithMember,
                 defaultSender: _defaultSender,
                 isDarkMode: _isDarkMode,
+                isGroupChat: _project.isGroupChat,
+                groupMembers: _project.groupMembers,
+                selectedMemberId: _selectedGroupMember?.id,
+                onMemberSelected: (id) {
+                  setState(() {
+                    _selectedGroupMember = _project.groupMembers.firstWhere(
+                      (m) => m.id == id,
+                    );
+                  });
+                },
                 onToggleSender: () {
                   setState(() {
                     _defaultSender = _defaultSender == MessageSender.me
@@ -979,10 +1256,17 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
             index == _project.messages.length - 1 ||
             _project.messages[index + 1].sender != message.sender;
 
+        final groupMember = _project.getMemberById(message.groupMemberId);
+
         return ChatBubble(
           message: message,
           isDarkMode: _isDarkMode,
           showTail: showTail,
+          themeId: _project.chatThemeId,
+          senderName: groupMember?.name,
+          senderColor: groupMember != null
+              ? Color(groupMember.colorValue)
+              : null,
           onLongPress: () => _showMessageOptions(message),
         );
       },

@@ -14,6 +14,7 @@ class ChatBubble extends StatelessWidget {
   final Color? otherBubbleColor;
   final String? senderName;
   final Color? senderColor;
+  final String themeId;
 
   const ChatBubble({
     super.key,
@@ -27,14 +28,16 @@ class ChatBubble extends StatelessWidget {
     this.otherBubbleColor,
     this.senderName,
     this.senderColor,
+    this.themeId = 'default',
   });
 
   @override
   Widget build(BuildContext context) {
     final bool isMe = message.sender == MessageSender.me;
+    final chatTheme = AppTheme.getThemeById(themeId);
     final Color bubbleColor = isMe
-        ? (myBubbleColor ?? AppTheme.getMyMessageBubble(isDarkMode))
-        : (otherBubbleColor ?? AppTheme.getOtherMessageBubble(isDarkMode));
+        ? (myBubbleColor ?? chatTheme.myBubble(isDarkMode))
+        : (otherBubbleColor ?? chatTheme.otherBubble(isDarkMode));
 
     return GestureDetector(
       onTap: onTap,
@@ -47,8 +50,9 @@ class ChatBubble extends StatelessWidget {
           bottom: 1,
         ),
         child: Row(
-          mainAxisAlignment:
-              isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: isMe
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Flexible(
@@ -70,10 +74,8 @@ class ChatBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: bubbleColor,
                     borderRadius: BorderRadius.only(
-                      topLeft:
-                          Radius.circular(isMe ? 8 : (showTail ? 0 : 8)),
-                      topRight:
-                          Radius.circular(isMe ? (showTail ? 0 : 8) : 8),
+                      topLeft: Radius.circular(isMe ? 8 : (showTail ? 0 : 8)),
+                      topRight: Radius.circular(isMe ? (showTail ? 0 : 8) : 8),
                       bottomLeft: const Radius.circular(8),
                       bottomRight: const Radius.circular(8),
                     ),
@@ -160,8 +162,9 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildStatusIcon() {
     IconData icon = Icons.done;
-    Color color =
-        isDarkMode ? const Color(0xFF8696A0) : const Color(0xFF667781);
+    Color color = isDarkMode
+        ? const Color(0xFF8696A0)
+        : const Color(0xFF667781);
 
     switch (message.status) {
       case MessageStatus.sending:

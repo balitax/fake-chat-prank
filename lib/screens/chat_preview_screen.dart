@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
@@ -105,13 +106,29 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
               profile: widget.project.profile,
               isDarkMode: widget.isDarkMode,
               onEditPressed: () {},
+              isGroupChat: widget.project.isGroupChat,
+              groupMembers: widget.project.groupMembers,
             ),
             Expanded(
-              child: Container(
-                color: AppTheme.getChatBackground(widget.isDarkMode),
-                child: widget.project.messages.isEmpty
-                    ? _buildEmptyState()
-                    : _buildMessagesList(),
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: AppTheme.getThemeById(
+                      widget.project.chatThemeId,
+                    ).chatBg(widget.isDarkMode),
+                    child: widget.project.customBackgroundPath != null
+                        ? Image.file(
+                            File(widget.project.customBackgroundPath!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  widget.project.messages.isEmpty
+                      ? _buildEmptyState()
+                      : _buildMessagesList(),
+                ],
               ),
             ),
             if (widget.showWatermark && _hideControls)
@@ -175,10 +192,17 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
             index == widget.project.messages.length - 1 ||
             widget.project.messages[index + 1].sender != message.sender;
 
+        final groupMember = widget.project.getMemberById(message.groupMemberId);
+
         return ChatBubble(
           message: message,
           isDarkMode: widget.isDarkMode,
           showTail: showTail,
+          themeId: widget.project.chatThemeId,
+          senderName: groupMember?.name,
+          senderColor: groupMember != null
+              ? Color(groupMember.colorValue)
+              : null,
         );
       },
     );
@@ -190,9 +214,7 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
         ? const Color(0xFF8696A0)
         : const Color(0xFF667781);
     final inputBg = isDark ? const Color(0xFF2A3942) : Colors.white;
-    final chatBg = isDark
-        ? const Color(0xFF0B141A)
-        : const Color(0xFFEFE7DE);
+    final chatBg = isDark ? const Color(0xFF0B141A) : const Color(0xFFEFE7DE);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
@@ -318,9 +340,9 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
 
       if (mounted) {
         if (savedPath != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Saved to: $savedPath')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Saved to: $savedPath')));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to save. Check permissions.')),
@@ -329,9 +351,9 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {

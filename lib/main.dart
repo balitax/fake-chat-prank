@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'services/services.dart';
 import 'screens/screens.dart';
+import 'models/models.dart';
 import 'theme/app_theme.dart';
 import 'widgets/widgets.dart';
+import 'package:uuid/uuid.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -152,7 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              _isDarkMode
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
               color: isDark ? const Color(0xFF8696A0) : Colors.white,
             ),
             onPressed: _toggleTheme,
@@ -179,25 +184,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onSelected: (value) {
               if (value == 'settings') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SettingsScreen(
-                      isDarkMode: _isDarkMode,
-                      onThemeChanged: (isDark) {
-                        setState(() => _isDarkMode = isDark);
-                        widget.onThemeChanged(isDark);
-                      },
-                    ),
-                  ),
-                );
+                _openSettings();
+              } else if (value == 'new_group') {
+                _createNewGroup();
               }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'new_group', child: Text('New group')),
-              const PopupMenuItem(value: 'new_broadcast', child: Text('New broadcast')),
-              const PopupMenuItem(value: 'linked', child: Text('Linked devices')),
-              const PopupMenuItem(value: 'starred', child: Text('Starred messages')),
+              const PopupMenuItem(
+                value: 'new_broadcast',
+                child: Text('New broadcast'),
+              ),
+              const PopupMenuItem(
+                value: 'linked',
+                child: Text('Linked devices'),
+              ),
+              const PopupMenuItem(
+                value: 'starred',
+                child: Text('Starred messages'),
+              ),
               const PopupMenuItem(value: 'settings', child: Text('Settings')),
             ],
           ),
@@ -209,8 +214,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _projects.isEmpty
-                    ? _buildEmptyState()
-                    : _buildProjectsList(),
+                ? _buildEmptyState()
+                : _buildProjectsList(),
           ),
           // Banner Ad at bottom
           const BannerAdWidget(),
@@ -262,7 +267,10 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const Icon(Icons.add, size: 20),
               label: const Text('New Chat'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],
@@ -272,6 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProjectsList() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
     return ListView.builder(
       itemCount: _projects.length,
@@ -291,15 +300,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   tag: 'profile_${project.id}',
                   child: CircleAvatar(
                     radius: 25,
-                    backgroundColor: const Color(0xFF6B7B8D),
-                    child: Text(
-                      _getInitials(project.name),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    backgroundColor: isDark
+                        ? const Color(0xFF202C33)
+                        : const Color(0xFFdfe5e7),
+                    backgroundImage: project.profile.profileImagePath != null
+                        ? FileImage(File(project.profile.profileImagePath!))
+                        : null,
+                    child: project.profile.profileImagePath == null
+                        ? Icon(
+                            project.isGroupChat ? Icons.group : Icons.person,
+                            size: 30,
+                            color: isDark
+                                ? const Color(0xFF8696a0)
+                                : Colors.white,
+                          )
+                        : null,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -406,17 +421,33 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${time.day}/${time.month}/${time.year}';
   }
 
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
-  }
-
   void _createNewChat() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ChatEditorScreen()),
+    ).then((_) => _loadData());
+  }
+
+  void _createNewGroup() {
+    final project = ChatProjectModel(
+      id: const Uuid().v4(),
+      name: 'New Group',
+      isGroupChat: true,
+      profile: ChatProfileModel(
+        id: const Uuid().v4(),
+        name: 'New Group',
+        onlineStatus: OnlineStatus.offline,
+      ),
+      messages: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatEditorScreen(existingProject: project),
+      ),
     ).then((_) => _loadData());
   }
 
@@ -429,15 +460,28 @@ class _HomeScreenState extends State<HomeScreen> {
     ).then((_) => _loadData());
   }
 
+  void _openSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(
+          isDarkMode: _isDarkMode,
+          onThemeChanged: (isDark) {
+            setState(() => _isDarkMode = isDark);
+            widget.onThemeChanged(isDark);
+          },
+        ),
+      ),
+    ).then((_) => _loadData());
+  }
+
   Future<void> _deleteProject(String projectId) async {
     final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete chat?'),
-        content: const Text(
-          'Messages will be removed from this device.',
-        ),
+        content: const Text('Messages will be removed from this device.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -459,9 +503,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadData();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chat deleted')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Chat deleted')));
       }
     }
   }
