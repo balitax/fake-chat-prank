@@ -135,9 +135,7 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
         );
         return;
       }
-      if (_selectedGroupMember == null) {
-        _selectedGroupMember = _project.groupMembers[0];
-      }
+      _selectedGroupMember ??= _project.groupMembers[0];
     }
 
     final message = MessageModel(
