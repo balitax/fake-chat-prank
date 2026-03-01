@@ -127,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = await widget.storageService.isDarkMode();
     final projects = await widget.storageService.getAllProjects();
 
+    if (!mounted) return;
     setState(() {
       _isDarkMode = isDark;
       _projects = projects;
@@ -137,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _toggleTheme() async {
     final newValue = !_isDarkMode;
     await widget.storageService.setThemeMode(newValue);
+    if (!mounted) return;
     setState(() {
       _isDarkMode = newValue;
     });

@@ -61,11 +61,7 @@ class StorageService {
   Future<ChatProjectModel?> getProject(String projectId) async {
     await init();
     final projects = await getAllProjects();
-    try {
-      return projects.firstWhere((p) => p.id == projectId);
-    } catch (e) {
-      return null;
-    }
+    return projects.where((p) => p.id == projectId).firstOrNull;
   }
 
   // Current Project

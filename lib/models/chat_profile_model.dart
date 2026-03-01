@@ -2,6 +2,10 @@ import 'dart:convert';
 
 enum OnlineStatus { online, typing, offline }
 
+T _safeEnum<T>(List<T> values, int index, T fallback) {
+  return (index >= 0 && index < values.length) ? values[index] : fallback;
+}
+
 class ChatProfileModel {
   final String id;
   final String name;
@@ -27,19 +31,22 @@ class ChatProfileModel {
     String? id,
     String? name,
     String? profileImagePath,
+    bool clearProfileImagePath = false,
     String? statusText,
+    bool clearStatusText = false,
     OnlineStatus? onlineStatus,
     String? lastSeenText,
+    bool clearLastSeenText = false,
     String? chatBackgroundColor,
     bool? isPremium,
   }) {
     return ChatProfileModel(
       id: id ?? this.id,
       name: name ?? this.name,
-      profileImagePath: profileImagePath ?? this.profileImagePath,
-      statusText: statusText ?? this.statusText,
+      profileImagePath: clearProfileImagePath ? null : (profileImagePath ?? this.profileImagePath),
+      statusText: clearStatusText ? null : (statusText ?? this.statusText),
       onlineStatus: onlineStatus ?? this.onlineStatus,
-      lastSeenText: lastSeenText ?? this.lastSeenText,
+      lastSeenText: clearLastSeenText ? null : (lastSeenText ?? this.lastSeenText),
       chatBackgroundColor: chatBackgroundColor ?? this.chatBackgroundColor,
       isPremium: isPremium ?? this.isPremium,
     );
@@ -64,7 +71,7 @@ class ChatProfileModel {
       name: json['name'] as String,
       profileImagePath: json['profileImagePath'] as String?,
       statusText: json['statusText'] as String?,
-      onlineStatus: OnlineStatus.values[json['onlineStatus'] as int? ?? 2],
+      onlineStatus: _safeEnum(OnlineStatus.values, json['onlineStatus'] as int? ?? 2, OnlineStatus.offline),
       lastSeenText: json['lastSeenText'] as String?,
       chatBackgroundColor: json['chatBackgroundColor'] as String? ?? '#ECE5DD',
       isPremium: json['isPremium'] as bool? ?? false,

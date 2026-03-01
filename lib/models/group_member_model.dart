@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class GroupMemberModel {
   final String id;
   final String name;

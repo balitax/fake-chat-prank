@@ -4,6 +4,10 @@ enum MessageSender { me, other }
 
 enum MessageStatus { sending, sent, delivered, read }
 
+T _safeEnum<T>(List<T> values, int index, T fallback) {
+  return (index >= 0 && index < values.length) ? values[index] : fallback;
+}
+
 class MessageModel {
   final String id;
   final String text;
@@ -59,9 +63,9 @@ class MessageModel {
     return MessageModel(
       id: json['id'] as String,
       text: json['text'] as String,
-      sender: MessageSender.values[json['sender'] as int],
+      sender: _safeEnum(MessageSender.values, json['sender'] as int, MessageSender.me),
       timestamp: DateTime.parse(json['timestamp'] as String),
-      status: MessageStatus.values[json['status'] as int],
+      status: _safeEnum(MessageStatus.values, json['status'] as int, MessageStatus.sent),
       isDeleted: json['isDeleted'] as bool? ?? false,
       groupMemberId: json['groupMemberId'] as String?,
     );

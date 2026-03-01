@@ -199,22 +199,22 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                   icon: CircleAvatar(
                     radius: 14,
                     backgroundColor: widget.selectedMemberId != null
-                        ? Color(
-                            widget.groupMembers
-                                .firstWhere(
-                                  (m) => m.id == widget.selectedMemberId,
-                                )
-                                .colorValue,
-                          )
+                        ? (() {
+                            final member = widget.groupMembers
+                                .where((m) => m.id == widget.selectedMemberId)
+                                .firstOrNull;
+                            return member != null ? Color(member.colorValue) : Colors.grey;
+                          })()
                         : Colors.grey,
                     child: Text(
                       widget.selectedMemberId != null
                           ? widget.groupMembers
-                                .firstWhere(
+                                .where(
                                   (m) => m.id == widget.selectedMemberId,
                                 )
-                                .name[0]
-                                .toUpperCase()
+                                .firstOrNull
+                                ?.name[0]
+                                .toUpperCase() ?? '?'
                           : '?',
                       style: const TextStyle(fontSize: 10, color: Colors.white),
                     ),

@@ -49,6 +49,7 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   Future<void> _loadSettings() async {
     final isDark = await _storageService.isDarkMode();
     final settings = await _storageService.getSettings();
+    if (!mounted) return;
     setState(() {
       _isDarkMode = isDark;
       _autoScroll = settings['autoScroll'] ?? true;
@@ -88,6 +89,7 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
   void _scrollToBottom() {
     if (_autoScroll && _scrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 100), () {
+        if (!mounted || !_scrollController.hasClients) return;
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -1201,6 +1203,7 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                   setState(() {
                     _selectedGroupMember = _project.groupMembers.firstWhere(
                       (m) => m.id == id,
+                      orElse: () => _project.groupMembers.first,
                     );
                   });
                 },

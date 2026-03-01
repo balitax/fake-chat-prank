@@ -3,7 +3,11 @@
     "allow": [
       "Bash(flutter analyze 2>&1 | tail -5)",
       "Bash(flutter analyze 2>&1 | tail -3)",
-      "Bash(flutter pub get 2>&1 | tail -5)"
+      "Bash(flutter pub get 2>&1 | tail -5)",
+      "Bash(wc -l /Users/bareksa/Documents/fake-chat/lib/**/*.dart | tail -1)",
+      "Bash(find /Users/bareksa/Documents/fake-chat/android/app -type f -name \"*.kt\" 2>/dev/null | head -10)",
+      "Bash(flutter analyze 2>&1 | head -40)",
+      "Bash(flutter analyze 2>&1 | head -20)"
     ]
   }
 }

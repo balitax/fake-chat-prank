@@ -179,7 +179,7 @@ class ChatHeader extends StatelessWidget {
   }
 
   String _getInitials() {
-    final parts = profile.name.trim().split(' ');
+    final parts = profile.name.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
