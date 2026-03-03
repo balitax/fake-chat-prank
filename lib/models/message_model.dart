@@ -16,6 +16,8 @@ class MessageModel {
   final MessageStatus status;
   final bool isDeleted;
   final String? groupMemberId;
+  final bool isVoiceNote;
+  final int? voiceDuration; // in seconds
 
   MessageModel({
     required this.id,
@@ -25,6 +27,8 @@ class MessageModel {
     this.status = MessageStatus.sent,
     this.isDeleted = false,
     this.groupMemberId,
+    this.isVoiceNote = false,
+    this.voiceDuration,
   });
 
   MessageModel copyWith({
@@ -35,6 +39,8 @@ class MessageModel {
     MessageStatus? status,
     bool? isDeleted,
     String? groupMemberId,
+    bool? isVoiceNote,
+    int? voiceDuration,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -44,6 +50,8 @@ class MessageModel {
       status: status ?? this.status,
       isDeleted: isDeleted ?? this.isDeleted,
       groupMemberId: groupMemberId ?? this.groupMemberId,
+      isVoiceNote: isVoiceNote ?? this.isVoiceNote,
+      voiceDuration: voiceDuration ?? this.voiceDuration,
     );
   }
 
@@ -56,6 +64,8 @@ class MessageModel {
       'status': status.index,
       'isDeleted': isDeleted,
       'groupMemberId': groupMemberId,
+      'isVoiceNote': isVoiceNote,
+      'voiceDuration': voiceDuration,
     };
   }
 
@@ -63,11 +73,21 @@ class MessageModel {
     return MessageModel(
       id: json['id'] as String,
       text: json['text'] as String,
-      sender: _safeEnum(MessageSender.values, json['sender'] as int, MessageSender.me),
+      sender: _safeEnum(
+        MessageSender.values,
+        json['sender'] as int,
+        MessageSender.me,
+      ),
       timestamp: DateTime.parse(json['timestamp'] as String),
-      status: _safeEnum(MessageStatus.values, json['status'] as int, MessageStatus.sent),
+      status: _safeEnum(
+        MessageStatus.values,
+        json['status'] as int,
+        MessageStatus.sent,
+      ),
       isDeleted: json['isDeleted'] as bool? ?? false,
       groupMemberId: json['groupMemberId'] as String?,
+      isVoiceNote: json['isVoiceNote'] as bool? ?? false,
+      voiceDuration: json['voiceDuration'] as int?,
     );
   }
 

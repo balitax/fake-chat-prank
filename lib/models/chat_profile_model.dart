@@ -15,6 +15,7 @@ class ChatProfileModel {
   final String? lastSeenText;
   final String chatBackgroundColor;
   final bool isPremium;
+  final bool isVerified;
 
   ChatProfileModel({
     required this.id,
@@ -25,6 +26,7 @@ class ChatProfileModel {
     this.lastSeenText,
     this.chatBackgroundColor = '#ECE5DD',
     this.isPremium = false,
+    this.isVerified = false,
   });
 
   ChatProfileModel copyWith({
@@ -39,16 +41,22 @@ class ChatProfileModel {
     bool clearLastSeenText = false,
     String? chatBackgroundColor,
     bool? isPremium,
+    bool? isVerified,
   }) {
     return ChatProfileModel(
       id: id ?? this.id,
       name: name ?? this.name,
-      profileImagePath: clearProfileImagePath ? null : (profileImagePath ?? this.profileImagePath),
+      profileImagePath: clearProfileImagePath
+          ? null
+          : (profileImagePath ?? this.profileImagePath),
       statusText: clearStatusText ? null : (statusText ?? this.statusText),
       onlineStatus: onlineStatus ?? this.onlineStatus,
-      lastSeenText: clearLastSeenText ? null : (lastSeenText ?? this.lastSeenText),
+      lastSeenText: clearLastSeenText
+          ? null
+          : (lastSeenText ?? this.lastSeenText),
       chatBackgroundColor: chatBackgroundColor ?? this.chatBackgroundColor,
       isPremium: isPremium ?? this.isPremium,
+      isVerified: isVerified ?? this.isVerified,
     );
   }
 
@@ -62,6 +70,7 @@ class ChatProfileModel {
       'lastSeenText': lastSeenText,
       'chatBackgroundColor': chatBackgroundColor,
       'isPremium': isPremium,
+      'isVerified': isVerified,
     };
   }
 
@@ -71,17 +80,24 @@ class ChatProfileModel {
       name: json['name'] as String,
       profileImagePath: json['profileImagePath'] as String?,
       statusText: json['statusText'] as String?,
-      onlineStatus: _safeEnum(OnlineStatus.values, json['onlineStatus'] as int? ?? 2, OnlineStatus.offline),
+      onlineStatus: _safeEnum(
+        OnlineStatus.values,
+        json['onlineStatus'] as int? ?? 2,
+        OnlineStatus.offline,
+      ),
       lastSeenText: json['lastSeenText'] as String?,
       chatBackgroundColor: json['chatBackgroundColor'] as String? ?? '#ECE5DD',
       isPremium: json['isPremium'] as bool? ?? false,
+      isVerified: json['isVerified'] as bool? ?? false,
     );
   }
 
   String toJsonString() => jsonEncode(toJson());
 
   factory ChatProfileModel.fromJsonString(String jsonString) {
-    return ChatProfileModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+    return ChatProfileModel.fromJson(
+      jsonDecode(jsonString) as Map<String, dynamic>,
+    );
   }
 
   @override

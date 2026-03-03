@@ -9,6 +9,7 @@ import '../widgets/widgets.dart';
 import '../theme/app_theme.dart';
 import 'chat_preview_screen.dart';
 import 'settings_screen.dart';
+import 'fake_call_screen.dart';
 
 class ChatEditorScreen extends StatefulWidget {
   final ChatProjectModel? existingProject;
@@ -99,13 +100,20 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     }
   }
 
-  void _addMessage(String text, MessageSender sender) {
+  void _addMessage(
+    String text,
+    MessageSender sender, {
+    bool isVoiceNote = false,
+    int? voiceDuration,
+  }) {
     final message = MessageModel(
       id: const Uuid().v4(),
       text: text,
       sender: sender,
       timestamp: DateTime.now(),
       status: MessageStatus.sent,
+      isVoiceNote: isVoiceNote,
+      voiceDuration: voiceDuration,
       groupMemberId:
           sender == MessageSender.other &&
               _project.isGroupChat &&
@@ -127,7 +135,12 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     _scrollToBottom();
   }
 
-  void _addMessageWithMember(String text, MessageSender sender) {
+  void _addMessageWithMember(
+    String text,
+    MessageSender sender, {
+    bool isVoiceNote = false,
+    int? voiceDuration,
+  }) {
     if (sender == MessageSender.other && _project.isGroupChat) {
       if (_project.groupMembers.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +157,8 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       sender: sender,
       timestamp: DateTime.now(),
       status: MessageStatus.sent,
+      isVoiceNote: isVoiceNote,
+      voiceDuration: voiceDuration,
       groupMemberId: sender == MessageSender.other && _project.isGroupChat
           ? _selectedGroupMember?.id
           : null,
@@ -592,6 +607,19 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     );
   }
 
+  void _startCall(bool isVideo) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FakeCallScreen(
+          profile: _project.profile,
+          isVideo: isVideo,
+          isIncoming: false,
+        ),
+      ),
+    );
+  }
+
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _project.profile.name);
     final statusController = TextEditingController(
@@ -658,6 +686,22 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
                   onChanged: (value) {
                     setDialogState(() {
                       _project = _project.copyWith(isGroupChat: value);
+                    });
+                  },
+                ),
+                // Verified Badge Toggle
+                SwitchListTile(
+                  title: const Text('Verified Badge'),
+                  subtitle: const Text(
+                    'Show blue checkmark next to profile name',
+                  ),
+                  value: _project.profile.isVerified,
+                  activeColor: const Color(0xFF00A884),
+                  onChanged: (value) {
+                    setDialogState(() {
+                      _project = _project.copyWith(
+                        profile: _project.profile.copyWith(isVerified: value),
+                      );
                     });
                   },
                 ),
@@ -1150,6 +1194,8 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
             profile: _project.profile,
             isDarkMode: _isDarkMode,
             onEditPressed: _showEditProfileDialog,
+            onVideoCallPressed: () => _startCall(true),
+            onVoiceCallPressed: () => _startCall(false),
             isGroupChat: _project.isGroupChat,
             groupMembers: _project.groupMembers,
           ),

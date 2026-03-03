@@ -5,3 +5,4 @@ export 'typing_indicator.dart';
 export 'premium_lock_overlay.dart';
 export 'chat_theme_selector.dart';
 export 'banner_ad_widget.dart';
+export 'verified_badge.dart';

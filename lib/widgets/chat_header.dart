@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import 'verified_badge.dart';
 
 class ChatHeader extends StatelessWidget {
   final ChatProfileModel profile;
   final bool isDarkMode;
   final VoidCallback onEditPressed;
+  final VoidCallback? onVideoCallPressed;
+  final VoidCallback? onVoiceCallPressed;
   final bool isGroupChat;
   final List<GroupMemberModel> groupMembers;
 
@@ -14,6 +17,8 @@ class ChatHeader extends StatelessWidget {
     required this.profile,
     required this.isDarkMode,
     required this.onEditPressed,
+    this.onVideoCallPressed,
+    this.onVoiceCallPressed,
     this.isGroupChat = false,
     this.groupMembers = const [],
   });
@@ -23,9 +28,7 @@ class ChatHeader extends StatelessWidget {
     final appBarBg = isDarkMode
         ? const Color(0xFF1F2C34)
         : const Color(0xFF008069);
-    final iconColor = isDarkMode
-        ? const Color(0xFF8696A0)
-        : Colors.white;
+    final iconColor = isDarkMode ? const Color(0xFF8696A0) : Colors.white;
 
     return Container(
       color: appBarBg,
@@ -59,12 +62,9 @@ class ChatHeader extends StatelessWidget {
                           : CircleAvatar(
                               radius: 18,
                               backgroundColor: const Color(0xFF6B7B8D),
-                              backgroundImage:
-                                  profile.profileImagePath != null
-                                      ? FileImage(
-                                          File(profile.profileImagePath!),
-                                        )
-                                      : null,
+                              backgroundImage: profile.profileImagePath != null
+                                  ? FileImage(File(profile.profileImagePath!))
+                                  : null,
                               child: profile.profileImagePath == null
                                   ? Text(
                                       _getInitials(),
@@ -89,35 +89,42 @@ class ChatHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      profile.name,
-                      style: TextStyle(
-                        color: isDark
-                            ? const Color(0xFFE9EDEF)
-                            : Colors.white,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            profile.name,
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFFE9EDEF)
+                                  : Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (profile.isVerified)
+                          const VerifiedBadge(size: 16, color: Colors.white),
+                      ],
                     ),
                     const SizedBox(height: 1),
-                    isGroupChat
-                        ? _buildGroupSubtitle()
-                        : _buildStatusText(),
+                    isGroupChat ? _buildGroupSubtitle() : _buildStatusText(),
                   ],
                 ),
               ),
             ),
             IconButton(
               icon: Icon(Icons.videocam_rounded, color: iconColor, size: 22),
-              onPressed: () {},
+              onPressed: onVideoCallPressed,
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(),
             ),
             IconButton(
               icon: Icon(Icons.call, color: iconColor, size: 20),
-              onPressed: () {},
+              onPressed: onVoiceCallPressed,
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(),
             ),
@@ -179,7 +186,11 @@ class ChatHeader extends StatelessWidget {
   }
 
   String _getInitials() {
-    final parts = profile.name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    final parts = profile.name
+        .trim()
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();

@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 
 class MessageInputPanel extends StatefulWidget {
-  final Function(String text, MessageSender sender) onSendMessage;
+  final Function(
+    String text,
+    MessageSender sender, {
+    bool isVoiceNote,
+    int? voiceDuration,
+  })
+  onSendMessage;
   final VoidCallback? onToggleSender;
   final MessageSender defaultSender;
   final bool isDarkMode;
@@ -59,6 +65,17 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
 
     widget.onSendMessage(text, _currentSender);
     _controller.clear();
+  }
+
+  void _sendVoiceNote() {
+    // Simulate sending a voice note with a random duration between 3s and 60s
+    final duration = 3 + (DateTime.now().millisecond % 57);
+    widget.onSendMessage(
+      '',
+      _currentSender,
+      isVoiceNote: true,
+      voiceDuration: duration,
+    );
   }
 
   void _toggleSender() {
@@ -203,18 +220,21 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                             final member = widget.groupMembers
                                 .where((m) => m.id == widget.selectedMemberId)
                                 .firstOrNull;
-                            return member != null ? Color(member.colorValue) : Colors.grey;
+                            return member != null
+                                ? Color(member.colorValue)
+                                : Colors.grey;
                           })()
                         : Colors.grey,
                     child: Text(
                       widget.selectedMemberId != null
                           ? widget.groupMembers
-                                .where(
-                                  (m) => m.id == widget.selectedMemberId,
-                                )
-                                .firstOrNull
-                                ?.name[0]
-                                .toUpperCase() ?? '?'
+                                    .where(
+                                      (m) => m.id == widget.selectedMemberId,
+                                    )
+                                    .firstOrNull
+                                    ?.name[0]
+                                    .toUpperCase() ??
+                                '?'
                           : '?',
                       style: const TextStyle(fontSize: 10, color: Colors.white),
                     ),
@@ -256,7 +276,7 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(24),
                     onTap: widget.enabled
-                        ? (_hasText ? _sendMessage : null)
+                        ? (_hasText ? _sendMessage : _sendVoiceNote)
                         : null,
                     child: Icon(
                       _hasText ? Icons.send : Icons.mic,

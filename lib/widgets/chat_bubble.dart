@@ -97,34 +97,37 @@ class ChatBubble extends StatelessWidget {
                         ),
                       Stack(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
-                            child: Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: message.text,
-                                    style: TextStyle(
-                                      fontSize: 15.5,
-                                      color: isDarkMode
-                                          ? const Color(0xFFE9EDEF)
-                                          : const Color(0xFF111B21),
-                                      height: 1.3,
+                          if (message.isVoiceNote)
+                            _buildVoiceNote(context, isMe, isDarkMode)
+                          else
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: message.text,
+                                      style: TextStyle(
+                                        fontSize: 15.5,
+                                        color: isDarkMode
+                                            ? const Color(0xFFE9EDEF)
+                                            : const Color(0xFF111B21),
+                                        height: 1.3,
+                                      ),
                                     ),
-                                  ),
-                                  TextSpan(
-                                    text: isMe
-                                        ? '         ${_formatTime(message.timestamp)}  '
-                                        : '      ${_formatTime(message.timestamp)} ',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.transparent,
+                                    TextSpan(
+                                      text: isMe
+                                          ? '         ${_formatTime(message.timestamp)}  '
+                                          : '      ${_formatTime(message.timestamp)} ',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.transparent,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
                           Positioned(
                             bottom: 0,
                             right: 0,
@@ -135,9 +138,13 @@ class ChatBubble extends StatelessWidget {
                                   _formatTime(message.timestamp),
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: isDarkMode
-                                        ? const Color(0xFF8696A0)
-                                        : const Color(0xFF667781),
+                                    color: message.isVoiceNote
+                                        ? (isDarkMode
+                                              ? const Color(0xFF8696A0)
+                                              : const Color(0xFF667781))
+                                        : (isDarkMode
+                                              ? const Color(0xFF8696A0)
+                                              : const Color(0xFF667781)),
                                   ),
                                 ),
                                 if (isMe) ...[
@@ -187,6 +194,76 @@ class ChatBubble extends StatelessWidget {
 
   String _formatTime(DateTime timestamp) {
     return DateFormat('h:mm a').format(timestamp);
+  }
+
+  Widget _buildVoiceNote(BuildContext context, bool isMe, bool isDark) {
+    final Color iconColor = isDark
+        ? const Color(0xFF819196)
+        : const Color(0xFF54656F);
+    final Color activeColor = isDark
+        ? const Color(0xFF3390EC) // Blue for played/active
+        : const Color(0xFF24A1DE);
+
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(Icons.play_arrow_rounded, size: 38, color: iconColor),
+              // Avatar for voice message
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Icon(Icons.mic, size: 12, color: iconColor),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                // Pseudo waveform / Progress bar
+                Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: 0, // Not playing
+                    child: Container(color: activeColor),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatDuration(message.voiceDuration ?? 0),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark
+                        ? const Color(0xFF8696A0)
+                        : const Color(0xFF667781),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    final int minutes = seconds ~/ 60;
+    final int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(1, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 }
 

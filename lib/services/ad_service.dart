@@ -8,13 +8,18 @@ class AdService {
   AdService._internal();
 
   static const String _premiumUnlockKey = 'premium_unlock_time';
+  static const String _adsWatchedKey = 'ads_watched_count';
   static const int premiumDurationHours = 6;
+  static const int adsRequiredForPremium = 3;
 
   // Test Ad Unit IDs (Google official)
   static const String bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
-  static const String rewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
-  static const String appOpenAdUnitId = 'ca-app-pub-3940256099942544/9257395921';
+  static const String interstitialAdUnitId =
+      'ca-app-pub-3940256099942544/1033173712';
+  static const String rewardedAdUnitId =
+      'ca-app-pub-3940256099942544/5224354917';
+  static const String appOpenAdUnitId =
+      'ca-app-pub-3940256099942544/9257395921';
 
   InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
@@ -119,9 +124,7 @@ class AdService {
     );
   }
 
-  Future<bool> showRewardedAd({
-    required void Function() onRewarded,
-  }) async {
+  Future<bool> showRewardedAd({required void Function() onRewarded}) async {
     if (_rewardedAd == null) {
       loadRewardedAd();
       return false;
@@ -195,6 +198,24 @@ class AdService {
       _premiumUnlockKey,
       DateTime.now().millisecondsSinceEpoch,
     );
+    // Reset ads count after unlocking
+    await resetAdsWatchedCount();
+  }
+
+  Future<int> getAdsWatchedCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_adsWatchedKey) ?? 0;
+  }
+
+  Future<void> incrementAdsWatchedCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getInt(_adsWatchedKey) ?? 0;
+    await prefs.setInt(_adsWatchedKey, current + 1);
+  }
+
+  Future<void> resetAdsWatchedCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_adsWatchedKey);
   }
 
   Future<bool> isPremiumActive() async {
@@ -213,7 +234,9 @@ class AdService {
     if (unlockTime == null) return null;
 
     final unlockDateTime = DateTime.fromMillisecondsSinceEpoch(unlockTime);
-    final expiry = unlockDateTime.add(const Duration(hours: premiumDurationHours));
+    final expiry = unlockDateTime.add(
+      const Duration(hours: premiumDurationHours),
+    );
     final remaining = expiry.difference(DateTime.now());
 
     if (remaining.isNegative) return null;
