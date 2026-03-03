@@ -7,6 +7,7 @@ class StorageService {
   static const String _currentProjectKey = 'current_project';
   static const String _themeKey = 'theme_mode';
   static const String _settingsKey = 'app_settings';
+  static const String _statusesKey = 'statuses';
 
   late SharedPreferences _prefs;
   bool _isInitialized = false;
@@ -27,7 +28,9 @@ class StorageService {
     try {
       final List<dynamic> decoded = jsonDecode(projectsJson) as List<dynamic>;
       return decoded
-          .map((json) => ChatProjectModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => ChatProjectModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       return [];
@@ -38,7 +41,7 @@ class StorageService {
     await init();
     final projects = await getAllProjects();
     final existingIndex = projects.indexWhere((p) => p.id == project.id);
-    
+
     if (existingIndex >= 0) {
       projects[existingIndex] = project;
     } else {
@@ -53,7 +56,7 @@ class StorageService {
     await init();
     final projects = await getAllProjects();
     projects.removeWhere((p) => p.id == projectId);
-    
+
     final encoded = jsonEncode(projects.map((p) => p.toJson()).toList());
     await _prefs.setString(_chatProjectsKey, encoded);
   }
@@ -107,6 +110,29 @@ class StorageService {
   Future<void> saveSettings(Map<String, dynamic> settings) async {
     await init();
     await _prefs.setString(_settingsKey, jsonEncode(settings));
+  }
+
+  // Statuses
+  Future<List<StatusModel>> getStatuses() async {
+    await init();
+    final String? statusesJson = _prefs.getString(_statusesKey);
+    if (statusesJson == null || statusesJson.isEmpty) {
+      return [];
+    }
+    try {
+      final List<dynamic> decoded = jsonDecode(statusesJson) as List<dynamic>;
+      return decoded
+          .map((json) => StatusModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> saveStatuses(List<StatusModel> statuses) async {
+    await init();
+    final encoded = jsonEncode(statuses.map((s) => s.toJson()).toList());
+    await _prefs.setString(_statusesKey, encoded);
   }
 
   Map<String, dynamic> get _defaultSettings => {

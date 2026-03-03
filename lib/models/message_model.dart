@@ -18,6 +18,8 @@ class MessageModel {
   final String? groupMemberId;
   final bool isVoiceNote;
   final int? voiceDuration; // in seconds
+  final bool isLocation;
+  final String? locationAddress;
 
   MessageModel({
     required this.id,
@@ -29,6 +31,8 @@ class MessageModel {
     this.groupMemberId,
     this.isVoiceNote = false,
     this.voiceDuration,
+    this.isLocation = false,
+    this.locationAddress,
   });
 
   MessageModel copyWith({
@@ -41,6 +45,8 @@ class MessageModel {
     String? groupMemberId,
     bool? isVoiceNote,
     int? voiceDuration,
+    bool? isLocation,
+    String? locationAddress,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -52,6 +58,8 @@ class MessageModel {
       groupMemberId: groupMemberId ?? this.groupMemberId,
       isVoiceNote: isVoiceNote ?? this.isVoiceNote,
       voiceDuration: voiceDuration ?? this.voiceDuration,
+      isLocation: isLocation ?? this.isLocation,
+      locationAddress: locationAddress ?? this.locationAddress,
     );
   }
 
@@ -66,6 +74,8 @@ class MessageModel {
       'groupMemberId': groupMemberId,
       'isVoiceNote': isVoiceNote,
       'voiceDuration': voiceDuration,
+      'isLocation': isLocation,
+      'locationAddress': locationAddress,
     };
   }
 
@@ -88,6 +98,8 @@ class MessageModel {
       groupMemberId: json['groupMemberId'] as String?,
       isVoiceNote: json['isVoiceNote'] as bool? ?? false,
       voiceDuration: json['voiceDuration'] as int?,
+      isLocation: json['isLocation'] as bool? ?? false,
+      locationAddress: json['locationAddress'] as String?,
     );
   }
 

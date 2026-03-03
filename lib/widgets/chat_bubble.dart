@@ -99,6 +99,8 @@ class ChatBubble extends StatelessWidget {
                         children: [
                           if (message.isVoiceNote)
                             _buildVoiceNote(context, isMe, isDarkMode)
+                          else if (message.isLocation)
+                            _buildLocationBubble(context, isMe, isDarkMode)
                           else
                             Padding(
                               padding: const EdgeInsets.only(bottom: 2),
@@ -138,7 +140,9 @@ class ChatBubble extends StatelessWidget {
                                   _formatTime(message.timestamp),
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: message.isVoiceNote
+                                    color:
+                                        (message.isVoiceNote ||
+                                            message.isLocation)
                                         ? (isDarkMode
                                               ? const Color(0xFF8696A0)
                                               : const Color(0xFF667781))
@@ -265,6 +269,116 @@ class ChatBubble extends StatelessWidget {
     final int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(1, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
+
+  Widget _buildLocationBubble(BuildContext context, bool isMe, bool isDark) {
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Map Placeholder
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF38434A) : const Color(0xFFE9EDEF),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Generic "Map" pattern using grid lines
+                CustomPaint(
+                  size: const Size(double.infinity, 120),
+                  painter: _MapPlaceholderPainter(isDark: isDark),
+                ),
+                // Location Pin
+                const Icon(Icons.location_on, color: Colors.red, size: 40),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Live Location',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? const Color(0xFFE9EDEF)
+                        : const Color(0xFF111B21),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message.locationAddress ??
+                      'Sent at ${_formatTime(message.timestamp)}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark
+                        ? const Color(0xFF8696A0)
+                        : const Color(0xFF667781),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 16),
+          const Center(
+            child: Text(
+              'View live location',
+              style: TextStyle(
+                color: Color(0xFF00A884),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapPlaceholderPainter extends CustomPainter {
+  final bool isDark;
+  _MapPlaceholderPainter({required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = (isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : Colors.black.withValues(alpha: 0.1))
+      ..strokeWidth = 1.0;
+
+    // Draw grid lines
+    for (double i = 0; i <= size.width; i += 20) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    }
+    for (double i = 0; i <= size.height; i += 20) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
+    }
+
+    // Draw some random "roads"
+    final roadPaint = Paint()
+      ..color = (isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : Colors.black.withValues(alpha: 0.1))
+      ..strokeWidth = 4.0;
+
+    canvas.drawLine(const Offset(0, 40), Offset(size.width, 80), roadPaint);
+    canvas.drawLine(const Offset(60, 0), Offset(100, size.height), roadPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BubbleTailPainter extends CustomPainter {

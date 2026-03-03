@@ -8,6 +8,8 @@ class MessageInputPanel extends StatefulWidget {
     MessageSender sender, {
     bool isVoiceNote,
     int? voiceDuration,
+    bool isLocation,
+    String? locationAddress,
   })
   onSendMessage;
   final VoidCallback? onToggleSender;
@@ -62,6 +64,76 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
     _controller.dispose();
     _recordingTimer?.cancel();
     super.dispose();
+  }
+
+  void _showAttachOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: widget.isDarkMode ? const Color(0xFF1F2C34) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Wrap(
+          spacing: 24,
+          runSpacing: 24,
+          children: [
+            _buildAttachItem(
+              Icons.insert_drive_file,
+              'Document',
+              Colors.indigo,
+            ),
+            _buildAttachItem(Icons.camera_alt, 'Camera', Colors.pink),
+            _buildAttachItem(Icons.image, 'Gallery', Colors.purple),
+            _buildAttachItem(Icons.headset, 'Audio', Colors.orange),
+            _buildAttachItem(
+              Icons.location_on,
+              'Location',
+              Colors.green,
+              onTap: _sendLocation,
+            ),
+            _buildAttachItem(Icons.person, 'Contact', Colors.blue),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachItem(
+    IconData icon,
+    String label,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        onTap?.call();
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  void _sendLocation() {
+    widget.onSendMessage(
+      '',
+      _currentSender,
+      isLocation: true,
+      locationAddress: 'Jakarta, Indonesia',
+    );
   }
 
   void _sendMessage() {
@@ -253,7 +325,7 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                                   size: 22,
                                 ),
                               ),
-                              onPressed: () {},
+                              onPressed: _showAttachOptions,
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
                             ),

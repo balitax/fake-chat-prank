@@ -105,6 +105,8 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     MessageSender sender, {
     bool isVoiceNote = false,
     int? voiceDuration,
+    bool isLocation = false,
+    String? locationAddress,
   }) {
     final message = MessageModel(
       id: const Uuid().v4(),
@@ -114,6 +116,8 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       status: MessageStatus.sent,
       isVoiceNote: isVoiceNote,
       voiceDuration: voiceDuration,
+      isLocation: isLocation,
+      locationAddress: locationAddress,
       groupMemberId:
           sender == MessageSender.other &&
               _project.isGroupChat &&
@@ -140,6 +144,8 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
     MessageSender sender, {
     bool isVoiceNote = false,
     int? voiceDuration,
+    bool isLocation = false,
+    String? locationAddress,
   }) {
     if (sender == MessageSender.other && _project.isGroupChat) {
       if (_project.groupMembers.isEmpty) {
@@ -159,6 +165,8 @@ class _ChatEditorScreenState extends State<ChatEditorScreen> {
       status: MessageStatus.sent,
       isVoiceNote: isVoiceNote,
       voiceDuration: voiceDuration,
+      isLocation: isLocation,
+      locationAddress: locationAddress,
       groupMemberId: sender == MessageSender.other && _project.isGroupChat
           ? _selectedGroupMember?.id
           : null,

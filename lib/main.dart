@@ -150,82 +150,111 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('WhatsApp'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isDarkMode
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-              color: isDark ? const Color(0xFF8696A0) : Colors.white,
-            ),
-            onPressed: _toggleTheme,
-            tooltip: 'Toggle Theme',
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.camera_alt_outlined,
-              color: isDark ? const Color(0xFF8696A0) : Colors.white,
-            ),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.search,
-              color: isDark ? const Color(0xFF8696A0) : Colors.white,
-            ),
-            onPressed: () {},
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: isDark ? const Color(0xFF8696A0) : Colors.white,
-            ),
-            onSelected: (value) {
-              if (value == 'settings') {
-                _openSettings();
-              } else if (value == 'new_group') {
-                _createNewGroup();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'new_group', child: Text('New group')),
-              const PopupMenuItem(
-                value: 'new_broadcast',
-                child: Text('New broadcast'),
+    return DefaultTabController(
+      length: 4,
+      initialIndex: 1,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('WhatsApp'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                _isDarkMode
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+                color: isDark ? const Color(0xFF8696A0) : Colors.white,
               ),
-              const PopupMenuItem(
-                value: 'linked',
-                child: Text('Linked devices'),
+              onPressed: _toggleTheme,
+              tooltip: 'Toggle Theme',
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.camera_alt_outlined,
+                color: isDark ? const Color(0xFF8696A0) : Colors.white,
               ),
-              const PopupMenuItem(
-                value: 'starred',
-                child: Text('Starred messages'),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.search,
+                color: isDark ? const Color(0xFF8696A0) : Colors.white,
               ),
-              const PopupMenuItem(value: 'settings', child: Text('Settings')),
+              onPressed: () {},
+            ),
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert,
+                color: isDark ? const Color(0xFF8696A0) : Colors.white,
+              ),
+              onSelected: (value) {
+                if (value == 'settings') {
+                  _openSettings();
+                } else if (value == 'new_group') {
+                  _createNewGroup();
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'new_group',
+                  child: Text('New group'),
+                ),
+                const PopupMenuItem(
+                  value: 'new_broadcast',
+                  child: Text('New broadcast'),
+                ),
+                const PopupMenuItem(
+                  value: 'linked',
+                  child: Text('Linked devices'),
+                ),
+                const PopupMenuItem(
+                  value: 'starred',
+                  child: Text('Starred messages'),
+                ),
+                const PopupMenuItem(value: 'settings', child: Text('Settings')),
+              ],
+            ),
+          ],
+          bottom: TabBar(
+            isScrollable: false,
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+            tabs: const [
+              Tab(icon: Icon(Icons.camera_alt, size: 20)),
+              Tab(text: 'CHATS'),
+              Tab(text: 'STATUS'),
+              Tab(text: 'CALLS'),
             ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _projects.isEmpty
-                ? _buildEmptyState()
-                : _buildProjectsList(),
-          ),
-          // Banner Ad at bottom
-          const BannerAdWidget(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createNewChat,
-        child: const Icon(Icons.chat, size: 24),
+        ),
+        body: TabBarView(
+          children: [
+            const Center(child: Text('Camera')),
+            Column(
+              children: [
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _projects.isEmpty
+                      ? _buildEmptyState()
+                      : _buildProjectsList(),
+                ),
+                const BannerAdWidget(),
+              ],
+            ),
+            StatusScreen(
+              isDarkMode: _isDarkMode,
+              storageService: widget.storageService,
+            ),
+            const Center(child: Text('Calls')),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _createNewChat,
+          child: const Icon(Icons.chat, size: 24),
+        ),
       ),
     );
   }
