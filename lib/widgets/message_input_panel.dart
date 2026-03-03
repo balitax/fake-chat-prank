@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 
@@ -40,6 +41,9 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
   final TextEditingController _controller = TextEditingController();
   late MessageSender _currentSender;
   bool _hasText = false;
+  bool _isRecording = false;
+  int _recordingDuration = 0;
+  Timer? _recordingTimer;
 
   @override
   void initState() {
@@ -56,6 +60,7 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
   @override
   void dispose() {
     _controller.dispose();
+    _recordingTimer?.cancel();
     super.dispose();
   }
 
@@ -67,15 +72,48 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
     _controller.clear();
   }
 
-  void _sendVoiceNote() {
-    // Simulate sending a voice note with a random duration between 3s and 60s
-    final duration = 3 + (DateTime.now().millisecond % 57);
-    widget.onSendMessage(
-      '',
-      _currentSender,
-      isVoiceNote: true,
-      voiceDuration: duration,
-    );
+  void _startRecording(LongPressStartDetails details) {
+    if (_hasText || !widget.enabled) return;
+
+    setState(() {
+      _isRecording = true;
+      _recordingDuration = 0;
+    });
+
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _recordingDuration++;
+      });
+    });
+  }
+
+  void _stopRecording(LongPressEndDetails details) {
+    if (!_isRecording) return;
+
+    _recordingTimer?.cancel();
+    final finalDuration = _recordingDuration;
+
+    setState(() {
+      _isRecording = false;
+      _recordingDuration = 0;
+    });
+
+    // Only send if it was recorded for at least 1 second
+    if (finalDuration >= 1) {
+      widget.onSendMessage(
+        '',
+        _currentSender,
+        isVoiceNote: true,
+        voiceDuration: finalDuration,
+      );
+    }
+  }
+
+  String _formatDuration(int seconds) {
+    final min = seconds ~/ 60;
+    final sec = seconds % 60;
+    return '${min.toString().padLeft(1, '0')}:${sec.toString().padLeft(2, '0')}';
   }
 
   void _toggleSender() {
@@ -115,96 +153,137 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 4),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.emoji_emotions_outlined,
-                          color: iconColor,
-                          size: 24,
+                    if (_isRecording)
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.mic,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatDuration(_recordingDuration),
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'Slide to cancel',
+                                style: TextStyle(
+                                  color: iconColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.chevron_left,
+                                color: iconColor,
+                                size: 16,
+                              ),
+                            ],
+                          ),
                         ),
-                        onPressed: () {},
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(),
+                      )
+                    else ...[
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 4),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.emoji_emotions_outlined,
+                            color: iconColor,
+                            size: 24,
+                          ),
+                          onPressed: () {},
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: TextField(
-                          controller: _controller,
-                          enabled: widget.enabled,
-                          maxLines: 6,
-                          minLines: 1,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: InputDecoration(
-                            hintText: 'Message',
-                            hintStyle: TextStyle(
-                              color: iconColor,
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: TextField(
+                            controller: _controller,
+                            enabled: widget.enabled,
+                            maxLines: 6,
+                            minLines: 1,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: 'Message',
+                              hintStyle: TextStyle(
+                                color: iconColor,
+                                fontSize: 17,
+                              ),
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 0,
+                                vertical: 10,
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                            style: TextStyle(
                               fontSize: 17,
+                              color: isDark
+                                  ? const Color(0xFFE9EDEF)
+                                  : const Color(0xFF111B21),
                             ),
-                            filled: false,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 0,
-                              vertical: 10,
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                          ),
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: isDark
-                                ? const Color(0xFFE9EDEF)
-                                : const Color(0xFF111B21),
                           ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Transform.rotate(
-                              angle: 0.8,
-                              child: Icon(
-                                Icons.attach_file,
-                                color: iconColor,
-                                size: 22,
-                              ),
-                            ),
-                            onPressed: () {},
-                            padding: const EdgeInsets.all(8),
-                            constraints: const BoxConstraints(),
-                          ),
-                          if (!_hasText)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             IconButton(
-                              icon: Icon(
-                                Icons.currency_rupee,
-                                color: iconColor,
-                                size: 22,
+                              icon: Transform.rotate(
+                                angle: 0.8,
+                                child: Icon(
+                                  Icons.attach_file,
+                                  color: iconColor,
+                                  size: 22,
+                                ),
                               ),
                               onPressed: () {},
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
                             ),
-                          if (!_hasText)
-                            IconButton(
-                              icon: Icon(
-                                Icons.camera_alt,
-                                color: iconColor,
-                                size: 22,
+                            if (!_hasText)
+                              IconButton(
+                                icon: Icon(
+                                  Icons.currency_rupee,
+                                  color: iconColor,
+                                  size: 22,
+                                ),
+                                onPressed: () {},
+                                padding: const EdgeInsets.all(8),
+                                constraints: const BoxConstraints(),
                               ),
-                              onPressed: () {},
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(),
-                            ),
-                          const SizedBox(width: 4),
-                        ],
+                            if (!_hasText)
+                              IconButton(
+                                icon: Icon(
+                                  Icons.camera_alt,
+                                  color: iconColor,
+                                  size: 22,
+                                ),
+                                onPressed: () {},
+                                padding: const EdgeInsets.all(8),
+                                constraints: const BoxConstraints(),
+                              ),
+                            const SizedBox(width: 4),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -263,6 +342,8 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
             // Send/Mic button
             GestureDetector(
               onLongPress: _toggleSender,
+              onLongPressStart: _startRecording,
+              onLongPressEnd: _stopRecording,
               child: Container(
                 height: 48,
                 width: 48,
@@ -275,9 +356,7 @@ class _MessageInputPanelState extends State<MessageInputPanel> {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(24),
-                    onTap: widget.enabled
-                        ? (_hasText ? _sendMessage : _sendVoiceNote)
-                        : null,
+                    onTap: widget.enabled && _hasText ? _sendMessage : null,
                     child: Icon(
                       _hasText ? Icons.send : Icons.mic,
                       color: Colors.white,
