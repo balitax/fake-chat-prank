@@ -137,7 +137,7 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
                 color: AppTheme.getChatBackground(widget.isDarkMode),
                 child: Center(
                   child: Text(
-                    'Created with Fake Chat Simulator',
+                    'Created with WhatsMock: Custom Fake Chat',
                     style: TextStyle(
                       fontSize: 11,
                       color: widget.isDarkMode
@@ -309,7 +309,7 @@ class _ChatPreviewScreenState extends State<ChatPreviewScreen> {
                       color: AppTheme.getChatBackground(widget.isDarkMode),
                       child: Center(
                         child: Text(
-                          'Fake Chat Simulator',
+                          'WhatsMock: Custom Fake Chat',
                           style: TextStyle(
                             fontSize: 12,
                             color: widget.isDarkMode

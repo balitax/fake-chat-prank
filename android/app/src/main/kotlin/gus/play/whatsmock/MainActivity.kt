@@ -1,4 +1,4 @@
-package gus.play.fakechat
+package gus.play.whatsmock
 
 import io.flutter.embedding.android.FlutterActivity
 

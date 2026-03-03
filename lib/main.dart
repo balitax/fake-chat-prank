@@ -85,7 +85,7 @@ class FakeChatAppState extends State<FakeChatApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Fake Chat Simulator',
+      title: 'WhatsMock: Custom Fake Chat',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

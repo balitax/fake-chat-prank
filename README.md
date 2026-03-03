@@ -1,4 +1,4 @@
-# Fake Chat Simulator
+# WhatsMock: Custom Fake Chat
 
 A WhatsApp-style fake chat conversation creator built with Flutter. Create realistic-looking chat screenshots for entertainment purposes.
 
