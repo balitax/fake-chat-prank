@@ -190,11 +190,13 @@ class _PremiumLockOverlayState extends State<PremiumLockOverlay> {
               await _adService.unlockPremium();
               if (mounted) {
                 setState(() => _adsWatched = 0);
-                Navigator.pop(context); // Close dialog
+                if (context.mounted) {
+                  Navigator.pop(context); // Close dialog
+                }
               }
               widget.onUnlocked?.call();
 
-              if (context.mounted) {
+              if (mounted && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Row(
@@ -213,7 +215,7 @@ class _PremiumLockOverlayState extends State<PremiumLockOverlay> {
                 );
               }
             } else {
-              if (context.mounted) {
+              if (mounted && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -228,7 +230,7 @@ class _PremiumLockOverlayState extends State<PremiumLockOverlay> {
           },
         )
         .then((shown) {
-          if (!shown && context.mounted) {
+          if (mounted && !shown && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Ad not ready yet. Please try again.'),
