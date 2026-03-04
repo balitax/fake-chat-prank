@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/ad_ids.dart';
+
 class AdService {
   static final AdService _instance = AdService._internal();
   factory AdService() => _instance;
@@ -12,14 +14,7 @@ class AdService {
   static const int premiumDurationHours = 6;
   static const int adsRequiredForPremium = 3;
 
-  // Test Ad Unit IDs (Google official)
-  static const String bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String interstitialAdUnitId =
-      'ca-app-pub-3940256099942544/1033173712';
-  static const String rewardedAdUnitId =
-      'ca-app-pub-3940256099942544/5224354917';
-  static const String appOpenAdUnitId =
-      'ca-app-pub-3940256099942544/9257395921';
+  // Ad Unit IDs moved to lib/constants/ad_ids.dart
 
   InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
@@ -40,7 +35,7 @@ class AdService {
     required void Function() onFailed,
   }) {
     return BannerAd(
-      adUnitId: bannerAdUnitId,
+      adUnitId: AdIds.bannerAdUnitId,
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -57,7 +52,7 @@ class AdService {
   // ─── Interstitial Ad ───
   void loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: interstitialAdUnitId,
+      adUnitId: AdIds.interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -110,7 +105,7 @@ class AdService {
   // ─── Rewarded Ad ───
   void loadRewardedAd() {
     RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
+      adUnitId: AdIds.rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -156,7 +151,7 @@ class AdService {
   // ─── App Open Ad ───
   void loadAppOpenAd() {
     AppOpenAd.load(
-      adUnitId: appOpenAdUnitId,
+      adUnitId: AdIds.appOpenAdUnitId,
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) {
