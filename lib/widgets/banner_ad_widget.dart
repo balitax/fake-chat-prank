@@ -5,10 +5,7 @@ import '../services/ad_service.dart';
 class BannerAdWidget extends StatefulWidget {
   final AdSize adSize;
 
-  const BannerAdWidget({
-    super.key,
-    this.adSize = AdSize.banner,
-  });
+  const BannerAdWidget({super.key, this.adSize = AdSize.banner});
 
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -24,15 +21,23 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     _loadAd();
   }
 
-  void _loadAd() {
+  Future<void> _loadAd() async {
+    final canShow = await AdService().canShowAds();
+    if (!canShow) {
+      debugPrint('Ad loading skipped: Ads disabled or Premium active');
+      return;
+    }
+
     _bannerAd = AdService().createBannerAd(
       size: widget.adSize,
       onLoaded: () {
+        debugPrint('Banner ad loaded successfully');
         if (mounted) {
           setState(() => _isLoaded = true);
         }
       },
       onFailed: () {
+        debugPrint('Banner ad failed to load');
         if (mounted) {
           setState(() => _isLoaded = false);
         }

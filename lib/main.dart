@@ -151,12 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return DefaultTabController(
-      length: 4,
-      initialIndex: 1,
+      length: 2,
+      initialIndex: 0,
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('WhatsApp'),
+          title: const Text('WhatsMock'),
           actions: [
             IconButton(
               icon: Icon(
@@ -167,20 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onPressed: _toggleTheme,
               tooltip: 'Toggle Theme',
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.camera_alt_outlined,
-                color: isDark ? const Color(0xFF8696A0) : Colors.white,
-              ),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.search,
-                color: isDark ? const Color(0xFF8696A0) : Colors.white,
-              ),
-              onPressed: () {},
             ),
             PopupMenuButton<String>(
               icon: Icon(
@@ -222,16 +208,13 @@ class _HomeScreenState extends State<HomeScreen> {
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
             tabs: const [
-              Tab(icon: Icon(Icons.camera_alt, size: 20)),
               Tab(text: 'CHATS'),
               Tab(text: 'STATUS'),
-              Tab(text: 'CALLS'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            const Center(child: Text('Camera')),
             Column(
               children: [
                 Expanded(
@@ -248,7 +231,6 @@ class _HomeScreenState extends State<HomeScreen> {
               isDarkMode: _isDarkMode,
               storageService: widget.storageService,
             ),
-            const Center(child: Text('Calls')),
           ],
         ),
         floatingActionButton: FloatingActionButton(

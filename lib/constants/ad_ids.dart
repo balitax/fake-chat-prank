@@ -25,4 +25,7 @@ class AdIds {
   /// Use this for testing ads in your app.
   static const String appOpenAdUnitId =
       'ca-app-pub-1330672114965626/3573800222';
+
+  /// Toggle to show/hide ads across the app
+  static const bool showAds = true;
 }

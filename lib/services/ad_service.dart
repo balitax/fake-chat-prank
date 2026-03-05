@@ -22,6 +22,10 @@ class AdService {
   bool _isShowingAppOpenAd = false;
 
   Future<void> initialize() async {
+    if (!AdIds.showAds) {
+      debugPrint('Ads are disabled via AdIds.showAds');
+      return;
+    }
     await MobileAds.instance.initialize();
     loadInterstitialAd();
     loadRewardedAd();
@@ -34,14 +38,19 @@ class AdService {
     required void Function() onLoaded,
     required void Function() onFailed,
   }) {
+    // If ads are disabled, we return a banner that won't load
+    // Alternatively, the UI should check AdIds.showAds before creating this
     return BannerAd(
       adUnitId: AdIds.bannerAdUnitId,
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => onLoaded(),
+        onAdLoaded: (_) {
+          debugPrint('Banner ad loaded successfully');
+          onLoaded();
+        },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('Banner failed: $error');
+          debugPrint('Banner ad failed to load: $error');
           ad.dispose();
           onFailed();
         },
@@ -51,6 +60,8 @@ class AdService {
 
   // ─── Interstitial Ad ───
   void loadInterstitialAd() {
+    if (!AdIds.showAds) return;
+
     InterstitialAd.load(
       adUnitId: AdIds.interstitialAdUnitId,
       request: const AdRequest(),
@@ -79,6 +90,11 @@ class AdService {
   }
 
   Future<void> showInterstitialAd({VoidCallback? onComplete}) async {
+    if (!AdIds.showAds) {
+      onComplete?.call();
+      return;
+    }
+
     if (_interstitialAd != null) {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (ad) {
@@ -104,6 +120,8 @@ class AdService {
 
   // ─── Rewarded Ad ───
   void loadRewardedAd() {
+    if (!AdIds.showAds) return;
+
     RewardedAd.load(
       adUnitId: AdIds.rewardedAdUnitId,
       request: const AdRequest(),
@@ -120,6 +138,11 @@ class AdService {
   }
 
   Future<bool> showRewardedAd({required void Function() onRewarded}) async {
+    if (!AdIds.showAds) {
+      onRewarded(); // Assume success if ads are disabled or handle differently
+      return true;
+    }
+
     if (_rewardedAd == null) {
       loadRewardedAd();
       return false;
@@ -150,6 +173,8 @@ class AdService {
 
   // ─── App Open Ad ───
   void loadAppOpenAd() {
+    if (!AdIds.showAds) return;
+
     AppOpenAd.load(
       adUnitId: AdIds.appOpenAdUnitId,
       request: const AdRequest(),
@@ -166,7 +191,7 @@ class AdService {
   }
 
   Future<void> showAppOpenAd() async {
-    if (_appOpenAd == null || _isShowingAppOpenAd) return;
+    if (!AdIds.showAds || _appOpenAd == null || _isShowingAppOpenAd) return;
 
     _isShowingAppOpenAd = true;
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
@@ -236,5 +261,11 @@ class AdService {
 
     if (remaining.isNegative) return null;
     return remaining;
+  }
+
+  Future<bool> canShowAds() async {
+    if (!AdIds.showAds) return false;
+    final isPremium = await isPremiumActive();
+    return !isPremium;
   }
 }
